@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Send_to_QuickBooks__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>When set to true (manual action), the Vendor trigger posts this Vendor to QuickBooks. Cleared to false after successful post. For batch SF→QB use Sync_to_QuickBooks__c instead.</description>
+    <label>Send to QuickBooks</label>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

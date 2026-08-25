@@ -1,0 +1,614 @@
+<template>
+    <div class="slds-m-bottom_small">
+        <div class="quote-card">
+            <div class="card-header">
+                <div class="header-left">
+                    <lightning-icon
+                        icon-name="standard:quotes"
+                        size="small">
+                    </lightning-icon>
+
+                    <h3>
+                        Quote Line Items ({lineItemsCountDisplay})
+                    </h3>
+                </div>
+
+                <div class="card-menu-container" onclick={handleCardMenuContainerClick}>
+                    <lightning-button-icon
+                        icon-name="utility:chevrondown"
+                        variant="bare"
+                        size="small"
+                        alternative-text="Show actions"
+                        onclick={handleToggleCardMenu}>
+                    </lightning-button-icon>
+                    <template if:true={showCardMenu}>
+                        <div class="card-dropdown" role="menu">
+                            <button
+                                type="button"
+                                class="card-menu-item"
+                                role="menuitem"
+                                onclick={handleEditClick}>
+                                Edit
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="line-item-preview">
+                <template if:true={hasPreviewItems}>
+                    <template for:each={previewLineItems} for:item="item">
+                        <div key={item.key} class="preview-item">
+                            <button
+                                type="button"
+                                class="item-code"
+                                onclick={handleOpenModal}>
+                                {item.productName}
+                            </button>
+
+                            <div class="detail-row">
+                                <span class="label">Cost:</span>
+                                <span>{item.cost}</span>
+                            </div>
+
+                            <div class="detail-row">
+                                <span class="label">Sales Price:</span>
+                                <span>{item.salesPrice}</span>
+                            </div>
+
+                            <div class="detail-row">
+                                <span class="label">Quantity:</span>
+                                <span>{item.quantity}</span>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+                <template if:false={hasPreviewItems}>
+                    <div class="preview-empty">No line items to preview.</div>
+                </template>
+            </div>
+
+            <button type="button" class="card-footer" onclick={handleOpenModal}>
+                View All
+            </button>
+        </div>
+    </div>
+
+    <template if:true={isModalOpen}>
+        <div class="quote-modal-host" role="presentation">
+        <div class="slds-backdrop slds-backdrop_open" aria-hidden="true"></div>
+        <section
+            role="dialog"
+            tabindex="-1"
+            aria-modal="true"
+            aria-label="Quote Line Item Editor"
+            class="slds-modal slds-fade-in-open slds-modal_large">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <lightning-button-icon
+                        icon-name="utility:close"
+                        alternative-text="Close"
+                        variant="bare"
+                        class="slds-modal__close modal-close-icon"
+                        onclick={handleCloseModal}
+                        disabled={saving}>
+                    </lightning-button-icon>
+                    <h2 class="slds-text-heading_medium slds-hyphenate">Quote Line Item Editor</h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium editor-body modal-body">
+                    <template if:true={loading}>
+                        <div class="state-container">
+                            <lightning-spinner alternative-text="Loading Quote Line Items"></lightning-spinner>
+                        </div>
+                    </template>
+
+                    <template if:false={loading}>
+                        <div class="editor-body">
+                            <template if:true={errorMessage}>
+                                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                                    <span class="slds-assistive-text">Error</span>
+                                    <h2>{errorMessage}</h2>
+                                </div>
+                            </template>
+
+                            <div class="line-items-section">
+                            <div class="section-header-bar section-header-bar_with-action" onclick={handleToolbarClick}>
+                                <h3 class="section-header-bar__title">Line Items</h3>
+                                <div class="section-header-bar__actions">
+                                    <lightning-button
+                                        label="Add Product"
+                                        icon-name="utility:add"
+                                        variant="brand-outline"
+                                        class="add-product-action"
+                                        onclick={handleAddProduct}
+                                        disabled={saving}>
+                                    </lightning-button>
+                                    <div class="settings-menu-container" onclick={handleSettingsMenuContainerClick}>
+                                        <lightning-button-icon
+                                            icon-name="utility:settings"
+                                            alternative-text="Settings"
+                                            title="Settings"
+                                            variant="border-filled"
+                                            class="settings-menu-trigger"
+                                            onclick={handleToggleSettingsMenu}
+                                            disabled={saving}>
+                                        </lightning-button-icon>
+                                        <template if:true={showSettingsMenu}>
+                                            <div class="settings-dropdown" role="menu">
+                                                <button
+                                                    type="button"
+                                                    class="settings-dropdown__item"
+                                                    role="menuitem"
+                                                    onclick={handleSettingsSelectFields}>
+                                                    Select Fields to Display
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    class="settings-dropdown__item"
+                                                    role="menuitem"
+                                                    onclick={handleSettingsSort}>
+                                                    Sort
+                                                </button>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="section-body">
+                            <template if:true={showProductFinder}>
+                                <div class="product-finder" onclick={handleProductFinderClick}>
+                                    <div class="product-finder-bar">
+                                        <lightning-input
+                                            type="search"
+                                            label="Search Products"
+                                            placeholder="Search by product name, code, or description"
+                                            value={productSearchTerm}
+                                            onchange={handleFinderProductSearch}
+                                            onfocus={handleFinderProductSearchFocus}
+                                            disabled={saving}>
+                                        </lightning-input>
+                                        <div class="product-finder-actions">
+                                            <template if:true={showProductSearchResults}>
+                                                <lightning-button
+                                                    variant="neutral"
+                                                    label="Cancel"
+                                                    class="product-finder-action"
+                                                    onclick={handleCancelProductSearch}
+                                                    disabled={saving}>
+                                                </lightning-button>
+                                            </template>
+                                            <lightning-button
+                                                variant="brand"
+                                                label={addSearchSelectedLabel}
+                                                class="product-finder-action"
+                                                onclick={handleAddSearchSelectedProducts}
+                                                disabled={disableAddSearchProducts}>
+                                            </lightning-button>
+                                        </div>
+                                    </div>
+
+                                    <template if:true={showProductSearchResults}>
+                                        <div class="product-search-results">
+                                            <div class="product-search-result-header">
+                                                <span>Select</span>
+                                                <span>Product</span>
+                                                <span>Cost</span>
+                                                <span>Sales Price</span>
+                                                <span>Description</span>
+                                            </div>
+                                            <div class="product-search-list">
+                                                <template for:each={productSearchResults} for:item="product">
+                                                    <div key={product.pricebookEntryId} class={product.rowClass}>
+                                                        <lightning-input
+                                                            type="checkbox"
+                                                            variant="label-hidden"
+                                                            checked={product.isSelected}
+                                                            disabled={product.isCheckboxDisabled}
+                                                            data-pbe-id={product.pricebookEntryId}
+                                                            onchange={handleSearchProductSelection}>
+                                                        </lightning-input>
+                                                        <span class="product-search-result-name">{product.productName}</span>
+                                                        <span>{product.formattedCost}</span>
+                                                        <span>{product.formattedSalesPrice}</span>
+                                                        <span class="product-search-result-description">{product.productDescription}</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div class="line-grid-wrap table-scroll-wrap">
+                                <table class="slds-table slds-table_cell-buffer slds-table_fixed-layout quote-line-table">
+                                    <thead>
+                                        <tr class="slds-line-height_reset">
+                                            <th scope="col" class="drag-col" title="Drag to reorder"></th>
+                                            <template for:each={tableColumnHeaders} for:item="column">
+                                                <th key={column.key} scope="col" class={column.headerClass}>{column.label}</th>
+                                            </template>
+                                            <th scope="col" class="action-col">Delete</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template if:true={hasRows}>
+                                            <template for:each={rowsForTemplate} for:item="row">
+                                                <tr
+                                                    key={row.key}
+                                                    class={row.rowClass}
+                                                    data-row-key={row.key}
+                                                    ondragover={handleRowDragOver}
+                                                    ondrop={handleRowDrop}>
+                                                    <td class="drag-col">
+                                                        <span
+                                                            class="drag-handle"
+                                                            draggable={row.isDraggable}
+                                                            title="Drag to reorder"
+                                                            data-row-key={row.key}
+                                                            ondragstart={handleRowDragStart}
+                                                            ondragend={handleRowDragEnd}>
+                                                            <lightning-icon
+                                                                icon-name="utility:drag_and_drop"
+                                                                size="x-small"
+                                                                alternative-text="Drag to reorder">
+                                                            </lightning-icon>
+                                                        </span>
+                                                    </td>
+                                                    <template for:each={row.tableCells} for:item="cell">
+                                                        <td key={cell.key} class={cell.cellClass}>
+                                                            <template if:true={cell.isProduct}>
+                                                                <template if:true={cell.isProductLink}>
+                                                                    <a
+                                                                        href={cell.recordPageUrl}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        class="product-name product-name-link"
+                                                                        title={cell.productDisplay}
+                                                                        onclick={handleProductRecordClick}>
+                                                                        {cell.productDisplay}
+                                                                    </a>
+                                                                </template>
+                                                                <template if:false={cell.isProductLink}>
+                                                                    <div class="product-name product-name-text" title={cell.productDisplay}>
+                                                                        {cell.productDisplay}
+                                                                    </div>
+                                                                </template>
+                                                                <template if:true={cell.hasProductError}>
+                                                                    <div class="error-text">{cell.productError}</div>
+                                                                </template>
+                                                            </template>
+                                                            <template if:true={cell.isCost}>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    type="number"
+                                                                    formatter="currency"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    value={cell.value}
+                                                                    data-row-key={cell.rowKey}
+                                                                    data-field="cost"
+                                                                    onchange={handleInputChange}
+                                                                    disabled>
+                                                                </lightning-input>
+                                                            </template>
+                                                            <template if:true={cell.isSalesPrice}>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    type="number"
+                                                                    formatter="currency"
+                                                                    step="0.01"
+                                                                    min="0"
+                                                                    value={cell.value}
+                                                                    data-row-key={cell.rowKey}
+                                                                    data-field="salesPrice"
+                                                                    onchange={handleInputChange}
+                                                                    disabled={saving}>
+                                                                </lightning-input>
+                                                                <template if:true={cell.hasSalesPriceError}>
+                                                                    <div class="error-text">{cell.salesPriceError}</div>
+                                                                </template>
+                                                            </template>
+                                                            <template if:true={cell.isQuantity}>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    type="number"
+                                                                    step="any"
+                                                                    min="0"
+                                                                    value={cell.value}
+                                                                    data-row-key={cell.rowKey}
+                                                                    data-field="quantity"
+                                                                    onchange={handleInputChange}
+                                                                    disabled={saving}>
+                                                                </lightning-input>
+                                                                <template if:true={cell.hasQuantityError}>
+                                                                    <div class="error-text">{cell.quantityError}</div>
+                                                                </template>
+                                                            </template>
+                                                            <template if:true={cell.isSubtotal}>
+                                                                {cell.displayValue}
+                                                            </template>
+                                                            <template if:true={cell.isTotalPrice}>
+                                                                {cell.displayValue}
+                                                            </template>
+                                                            <template if:true={cell.isIncludeInQuote}>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    type="checkbox"
+                                                                    checked={cell.checked}
+                                                                    data-row-key={cell.rowKey}
+                                                                    data-field="includeInQuote"
+                                                                    onchange={handleInputChange}
+                                                                    disabled={saving}>
+                                                                </lightning-input>
+                                                            </template>
+                                                            <template if:true={cell.isLineItemDescription}>
+                                                                <lightning-textarea
+                                                                    variant="label-hidden"
+                                                                    value={cell.value}
+                                                                    data-row-key={cell.rowKey}
+                                                                    data-field="lineItemDescription"
+                                                                    onchange={handleInputChange}
+                                                                    disabled={saving}>
+                                                                </lightning-textarea>
+                                                            </template>
+                                                            <template if:true={cell.isOptional}>
+                                                                <span class="optional-col-value" title={cell.displayValue}>{cell.displayValue}</span>
+                                                            </template>
+                                                        </td>
+                                                    </template>
+                                                    <td class="action-col">
+                                                        <lightning-button-icon
+                                                            icon-name="utility:delete"
+                                                            alternative-text="Delete"
+                                                            title="Delete"
+                                                            data-row-key={row.key}
+                                                            onclick={handleDeleteRow}
+                                                            disabled={saving}>
+                                                        </lightning-button-icon>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <template if:false={hasRows}>
+                                <div class="empty-state">No line items available. Click Add Product to add items.</div>
+                            </template>
+                            </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Cancel"
+                        onclick={handleCloseModal}
+                        disabled={saving}>
+                    </lightning-button>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        variant="brand"
+                        label={saveLabel}
+                        onclick={handleSave}
+                        disabled={saving}>
+                    </lightning-button>
+                </footer>
+
+                <template if:true={saving}>
+                    <div class="saving-overlay">
+                        <lightning-spinner alternative-text="Saving" size="medium"></lightning-spinner>
+                    </div>
+                </template>
+            </div>
+        </section>
+
+        <template if:true={showSortModal}>
+            <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-label="Column Sort"
+                class="slds-modal slds-fade-in-open line-sort-modal"
+                onclick={handleSortModalClick}>
+                <div class="slds-modal__container line-sort-modal__container">
+                    <header class="slds-modal__header line-sort-modal__header">
+                        <h2 class="slds-text-heading_medium slds-hyphenate">Column Sort</h2>
+                    </header>
+                    <div class="slds-modal__content sort-modal-content">
+                        <template for:each={sortCriteriaForTemplate} for:item="criterion">
+                            <div key={criterion.id} class="sort-criterion-block">
+                                <div class="sort-criterion-block__label">{criterion.rowLabel}</div>
+                                <div class="sort-criterion-row">
+                                    <div class="sort-criterion-row__controls">
+                                        <button
+                                            type="button"
+                                            class="sort-move-btn"
+                                            title="Move up"
+                                            data-criterion-id={criterion.id}
+                                            onclick={handleMoveSortCriterionUp}
+                                            disabled={criterion.disableMoveUp}>
+                                            <lightning-icon
+                                                icon-name="utility:up"
+                                                size="xx-small"
+                                                alternative-text="Move up">
+                                            </lightning-icon>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="sort-move-btn"
+                                            title="Move down"
+                                            data-criterion-id={criterion.id}
+                                            onclick={handleMoveSortCriterionDown}
+                                            disabled={criterion.disableMoveDown}>
+                                            <lightning-icon
+                                                icon-name="utility:down"
+                                                size="xx-small"
+                                                alternative-text="Move down">
+                                            </lightning-icon>
+                                        </button>
+                                    </div>
+                                    <div class="sort-criterion-row__main">
+                                        <div class="sort-criterion-row__field-wrap">
+                                            <lightning-combobox
+                                                variant="label-hidden"
+                                                placeholder="Select a column"
+                                                value={criterion.field}
+                                                options={criterion.fieldOptions}
+                                                data-criterion-id={criterion.id}
+                                                onchange={handleSortCriterionFieldChange}
+                                                disabled={saving}
+                                                class={criterion.fieldClass}>
+                                            </lightning-combobox>
+                                            <template if:true={criterion.hasError}>
+                                                <div class="sort-criterion-error">
+                                                    Select a column or delete this sort item.
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <fieldset class="sort-direction-group">
+                                            <legend class="slds-assistive-text">Sort direction</legend>
+                                            <label class="sort-direction-option">
+                                                <input
+                                                    type="radio"
+                                                    class="sort-direction-radio"
+                                                    name={criterion.id}
+                                                    value="asc"
+                                                    checked={criterion.isAscending}
+                                                    data-criterion-id={criterion.id}
+                                                    data-direction="asc"
+                                                    onchange={handleSortCriterionDirectionChange}
+                                                    disabled={saving} />
+                                                <span class="sort-direction-option__label">Ascending</span>
+                                            </label>
+                                            <label class="sort-direction-option">
+                                                <input
+                                                    type="radio"
+                                                    class="sort-direction-radio"
+                                                    name={criterion.id}
+                                                    value="desc"
+                                                    checked={criterion.isDescending}
+                                                    data-criterion-id={criterion.id}
+                                                    data-direction="desc"
+                                                    onchange={handleSortCriterionDirectionChange}
+                                                    disabled={saving} />
+                                                <span class="sort-direction-option__label">Descending</span>
+                                            </label>
+                                        </fieldset>
+                                    </div>
+                                    <div class="sort-criterion-row__delete">
+                                        <button
+                                            type="button"
+                                            class="sort-delete-btn"
+                                            title="Delete sort item"
+                                            data-criterion-id={criterion.id}
+                                            onclick={handleRemoveSortCriterion}
+                                            disabled={saving}>
+                                            <lightning-icon
+                                                icon-name="utility:delete"
+                                                size="x-small"
+                                                alternative-text="Delete sort item">
+                                            </lightning-icon>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                        <div class="sort-modal-actions">
+                            <template if:true={canAddSortCriterion}>
+                                <button
+                                    type="button"
+                                    class="sort-add-button"
+                                    onclick={handleAddSortCriterion}
+                                    disabled={saving}>
+                                    + Add a sort column
+                                </button>
+                            </template>
+                            <span class="sort-limit-label">{sortColumnLimitLabel}</span>
+                        </div>
+                    </div>
+                    <footer class="slds-modal__footer sort-modal-footer">
+                        <lightning-button
+                            label="Clear"
+                            onclick={handleClearSortCriteria}
+                            disabled={saving}>
+                        </lightning-button>
+                        <div class="sort-modal-footer__right">
+                            <lightning-button
+                                label="Cancel"
+                                onclick={handleCancelSortModal}
+                                disabled={saving}>
+                            </lightning-button>
+                            <lightning-button
+                                class="slds-m-left_small"
+                                variant="brand"
+                                label="Apply"
+                                onclick={handleApplySortCriteria}
+                                disabled={saving}>
+                            </lightning-button>
+                        </div>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open line-sort-backdrop"></div>
+        </template>
+
+        <template if:true={showLineFieldSelectorModal}>
+            <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-label="Select Fields to Display"
+                class="slds-modal slds-fade-in-open line-field-selector-modal">
+                <div class="slds-modal__container line-field-selector-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 class="slds-text-heading_medium slds-hyphenate">Select Fields to Display</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <template if:true={quoteLineFieldOptionsLoading}>
+                            <div class="field-selector-loading">
+                                <lightning-spinner alternative-text="Loading fields" size="small"></lightning-spinner>
+                            </div>
+                        </template>
+                        <template if:false={quoteLineFieldOptionsLoading}>
+                            <template if:true={hasTableColumnPickerOptions}>
+                                <lightning-dual-listbox
+                                    label="Columns"
+                                    source-label="Available"
+                                    selected-label="Visible"
+                                    options={tableColumnPickerOptions}
+                                    value={draftSelectedTableColumns}
+                                    onchange={handleQuoteLineFieldSelectionChange}
+                                    min="0">
+                                </lightning-dual-listbox>
+                            </template>
+                            <template if:false={hasTableColumnPickerOptions}>
+                                <div class="field-selector-empty">No columns are available to display.</div>
+                            </template>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <lightning-button
+                            label="Cancel"
+                            onclick={handleCloseLineFieldSelector}
+                            disabled={saving}>
+                        </lightning-button>
+                        <lightning-button
+                            class="slds-m-left_small"
+                            variant="brand"
+                            label="Apply"
+                            onclick={handleApplyQuoteLineFields}
+                            disabled={quoteLineFieldOptionsLoading}>
+                        </lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open line-field-selector-backdrop"></div>
+        </template>
+        </div>
+    </template>
+</template>

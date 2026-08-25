@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Sync_to_QuickBooks__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>When true, this Vendor is synced from Salesforce to QuickBooks (trigger or batch). Cleared to false after successful sync. Prevents empty updates and duplicate upserts when SF and QB are already in sync.</description>
+    <label>Sync to QuickBooks</label>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Checkbox</type>
+</CustomField>

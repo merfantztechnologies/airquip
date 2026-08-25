@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Terms__c</fullName>
+    <label>Terms</label>
+    <required>false</required>
+    <trackHistory>false</trackHistory>
+    <trackTrending>false</trackTrending>
+    <type>Picklist</type>
+    <valueSet>
+        <restricted>true</restricted>
+        <valueSetDefinition>
+            <sorted>false</sorted>
+            <value>
+                <fullName>1% 10 Net 30</fullName>
+                <default>false</default>
+                <label>1% 10 Net 30</label>
+            </value>
+            <value>
+                <fullName>2% 10 Net 30</fullName>
+                <default>false</default>
+                <label>2% 10 Net 30</label>
+            </value>
+            <value>
+                <fullName>COD</fullName>
+                <default>false</default>
+                <label>COD</label>
+            </value>
+            <value>
+                <fullName>Consignment</fullName>
+                <default>false</default>
+                <label>Consignment</label>
+            </value>
+            <value>
+                <fullName>Credit Card</fullName>
+                <default>false</default>
+                <label>Credit Card</label>
+            </value>
+            <value>
+                <fullName>Due on receipt</fullName>
+                <default>false</default>
+                <label>Due on receipt</label>
+            </value>
+            <value>
+                <fullName>NET 10</fullName>
+                <default>false</default>
+                <label>NET 10</label>
+            </value>
+            <value>
+                <fullName>NET 15</fullName>
+                <default>false</default>
+                <label>NET 15</label>
+            </value>
+            <value>
+                <fullName>NET 25</fullName>
+                <default>false</default>
+                <label>NET 25</label>
+            </value>
+            <value>
+                <fullName>NET 30</fullName>
+                <default>false</default>
+                <label>NET 30</label>
+            </value>
+            <value>
+                <fullName>NET 30 DAYS (Do Not Use)</fullName>
+                <default>false</default>
+                <label>NET 30 DAYS (Do Not Use)</label>
+            </value>
+            <value>
+                <fullName>NET 40</fullName>
+                <default>false</default>
+                <label>NET 40</label>
+            </value>
+            <value>
+                <fullName>NET 45</fullName>
+                <default>false</default>
+                <label>NET 45</label>
+            </value>
+            <value>
+                <fullName>NET 60</fullName>
+                <default>false</default>
+                <label>NET 60</label>
+            </value>
+            <value>
+                <fullName>NET 90</fullName>
+                <default>false</default>
+                <label>NET 90</label>
+            </value>
+            <value>
+                <fullName>QTRLY INTEREST EXPENSE PMTS</fullName>
+                <default>false</default>
+                <label>QTRLY INTEREST EXPENSE PMTS</label>
+            </value>
+        </valueSetDefinition>
+    </valueSet>
+</CustomField>

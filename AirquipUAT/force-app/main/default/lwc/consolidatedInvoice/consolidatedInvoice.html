@@ -1,0 +1,120 @@
+<template>
+    <lightning-card title="Generate Consolidated Invoice" icon-name="standard:work_order">
+        <template if:true={isLoading}>
+            <lightning-spinner alternative-text="Loading" size="medium"></lightning-spinner>
+        </template>
+
+        <div class="slds-p-horizontal_medium slds-p-bottom_medium">
+            <template if:true={errorMessage}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" role="alert">
+                    <span>{errorMessage}</span>
+                </div>
+            </template>
+
+            <template if:true={hasJobs}>
+                <div class="slds-notify slds-notify_alert slds-theme_info slds-m-bottom_small" role="status">
+                    <lightning-icon
+                        icon-name="utility:info"
+                        size="x-small"
+                        variant="inverse"
+                        class="slds-m-right_x-small">
+                    </lightning-icon>
+                    <span>
+                        Completed jobs that require an invoice are listed below. Jobs already on a consolidated
+                        invoice, or linked to a paid or otherwise ineligible invoice, are excluded.
+                    </span>
+                </div>
+
+                <div class="slds-scrollable_x">
+                    <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_fixed-layout">
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th scope="col" class="select-column">
+                                    <lightning-input
+                                        type="checkbox"
+                                        variant="label-hidden"
+                                        label="Select all jobs"
+                                        checked={allRowsSelected}
+                                        onchange={handleSelectAll}>
+                                    </lightning-input>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Job number">Job No</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Job category">Job Category</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Assigned to">Service Engineer</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Completion date">Completion Date</div>
+                                </th>
+                                <th scope="col">
+                                    <div class="slds-truncate" title="Status">Status</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={jobs} for:item="job">
+                                <tr key={job.jobId} class={job.rowClass}>
+                                    <td>
+                                        <lightning-input
+                                            type="checkbox"
+                                            variant="label-hidden"
+                                            label={job.selectionLabel}
+                                            data-job-id={job.jobId}
+                                            checked={job.isSelected}
+                                            onchange={handleJobSelection}>
+                                        </lightning-input>
+                                    </td>
+                                    <td>
+                                        <a href="javascript:void(0);" data-job-id={job.jobId} onclick={handleJobClick}>
+                                            {job.jobNumber}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate" title={job.jobCategory}>{job.jobCategory}</div>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate" title={job.serviceEngineer}>{job.serviceEngineer}</div>
+                                    </td>
+                                    <td>
+                                        <div class="slds-truncate" title={job.completionDateLabel}>{job.completionDateLabel}</div>
+                                    </td>
+                                    <td>
+                                        <span class="slds-badge">{job.status}</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <template if:true={showNoJobsMessage}>
+                <template if:false={isLoading}>
+                    <div class="slds-text-align_center slds-p-around_large">
+                        No eligible completed jobs are available for this account.
+                    </div>
+                </template>
+            </template>
+
+            <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-spread slds-m-top_medium">
+                <div class="slds-text-body_regular">
+                    <template if:true={hasSelection}>
+                        <strong>{selectedJobCount}</strong> job(s) selected
+                    </template>
+                </div>
+                <div>
+                    <lightning-button
+                        variant="brand"
+                        label="Generate Invoice"
+                        onclick={handleGenerateInvoice}
+                        disabled={isGenerateDisabled}>
+                    </lightning-button>
+                </div>
+            </div>
+        </div>
+    </lightning-card>
+</template>

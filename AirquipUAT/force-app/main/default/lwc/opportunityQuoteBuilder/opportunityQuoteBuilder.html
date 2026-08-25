@@ -1,0 +1,353 @@
+<template>
+    <template if:true={loading}>
+        <div class="slds-p-around_large slds-align_absolute-center">
+            <lightning-spinner alternative-text="Loading"></lightning-spinner>
+        </div>
+    </template>
+
+    <template if:false={loading}>
+        <div class="wrap slds-p-around_medium" onclick={handleComponentClick}>
+            <template if:true={saving}>
+                <div class="saving-overlay">
+                    <lightning-spinner alternative-text="Saving quote" size="medium"></lightning-spinner>
+                    <div class="saving-message">Saving quote and redirecting...</div>
+                </div>
+            </template>
+            <lightning-card title="Quote Generation Console" icon-name="standard:quotes">
+                <div class="form-panel">
+                    <div class="slds-section slds-is-open quote-section">
+                        <h3 class="slds-section__title section-title">
+                            <span class="slds-truncate slds-p-horizontal_small">Quote Details</span>
+                        </h3>
+                        <div class="slds-section__content form-grid slds-grid slds-wrap slds-gutters">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input
+                                    label="Quote Name"
+                                    value={quoteName}
+                                    onchange={handleQuoteNameChange}
+                                    required>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input
+                                    type="date"
+                                    label="Quote Expiration"
+                                    value={expirationDate}
+                                    onchange={handleExpirationChange}>
+                                </lightning-input>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2 account-search">
+                                <lightning-input
+                                    label="Account"
+                                    value={accountSearchTerm}
+                                    placeholder="Search Account"
+                                    onchange={handleAccountInput}
+                                    disabled={isAccountDisabled}
+                                    required>
+                                </lightning-input>
+                                <template if:true={accountSearchResults.length}>
+                                    <div class="lookup-results slds-box slds-theme_default">
+                                        <template for:each={accountSearchResults} for:item="account">
+                                            <button
+                                                key={account.accountId}
+                                                type="button"
+                                                class="lookup-result slds-button slds-button_reset"
+                                                data-id={account.accountId}
+                                                onclick={handleSelectAccount}>
+                                                {account.label}
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-combobox
+                                    label="Opportunity"
+                                    field-level-help="Use an existing Opportunity for this Quote, or leave Create new Opportunity selected to auto-create a new Opportunity."
+                                    value={opportunityValue}
+                                    options={opportunityOptionsWithNew}
+                                    onchange={handleOpportunityChange}
+                                    disabled={disableOpportunityPicker}>
+                                </lightning-combobox>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-combobox
+                                    label="Contact"
+                                    data-id="contact"
+                                    value={contactValue}
+                                    options={contactOptionsWithNone}
+                                    onchange={handleContactChange}
+                                    disabled={disableContactPicker}
+                                    required>
+                                </lightning-combobox>
+                                <div class="contact-helper slds-m-top_x-small">
+                                    <lightning-button
+                                        variant="base"
+                                        label={createContactButtonLabel}
+                                        onclick={handleToggleCreateContact}
+                                        disabled={disableCreateContact}>
+                                    </lightning-button>
+                                    <span class="slds-text-body_small slds-text-color_weak">
+                                        Required for quote. Create one here if needed.
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <lightning-input
+                                    type="email"
+                                    label="Email"
+                                    value={contactEmail}
+                                    onchange={handleContactEmailChange}
+                                    disabled={disableContactPicker}>
+                                </lightning-input>
+                            </div>
+                            <template if:true={showCreateContactForm}>
+                                <div class="slds-col slds-size_1-of-1 create-contact-panel">
+                                    <div class="slds-grid slds-wrap slds-gutters slds-grid_vertical-align-end">
+                                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                            <lightning-input
+                                                label="Account"
+                                                value={accountName}
+                                                disabled>
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                            <lightning-input
+                                                label="New Contact Name"
+                                                value={newContactName}
+                                                onchange={handleNewContactNameChange}
+                                                required>
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                            <lightning-input
+                                                type="email"
+                                                label="New Contact Email"
+                                                value={newContactEmail}
+                                                onchange={handleNewContactEmailChange}>
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                            <lightning-input
+                                                type="tel"
+                                                label="New Contact Phone"
+                                                value={newContactPhone}
+                                                onchange={handleNewContactPhoneChange}>
+                                            </lightning-input>
+                                        </div>
+                                        <div class="slds-col slds-size_1-of-1 slds-m-top_small slds-text-align_right">
+                                            <lightning-button
+                                                class="slds-m-right_small"
+                                                variant="neutral"
+                                                label="Cancel"
+                                                onclick={handleCancelCreateContact}
+                                                disabled={creatingContact}>
+                                            </lightning-button>
+                                            <lightning-button
+                                                variant="brand"
+                                                label="Create Contact"
+                                                onclick={handleCreateContact}
+                                                disabled={creatingContact}>
+                                            </lightning-button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <div class="slds-col slds-size_1-of-1">
+                                <lightning-textarea
+                                    label="Description"
+                                    value={quoteDescription}
+                                    placeholder="Add quote or opportunity details for the sales team..."
+                                    onchange={handleDescriptionChange}>
+                                </lightning-textarea>
+                            </div>
+                            <div class="slds-col slds-size_1-of-1 slds-text-body_small slds-text-color_weak">
+                                Opportunity Stage: Solution Proposed / Quote Sent | Quote Status: Draft
+                                <template if:true={needsOpportunityName}>
+                                    | New Opportunity: {opportunityName}
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-section">
+                    <div class="products-heading">
+                        <div>
+                            <h3 class="slds-text-heading_small">Line Items</h3>
+                            <p class="slds-text-body_small slds-text-color_weak">Search products first, then review selected quote lines below.</p>
+                        </div>
+                        <button type="button" class="slds-button inline-add-button" onclick={handleAddBlankLine}>
+                            <lightning-icon icon-name="utility:add" size="x-small" class="inline-add-icon"></lightning-icon>
+                            <span>Add Item</span>
+                        </button>
+                    </div>
+
+                    <div class="product-finder" onclick={handleProductFinderClick}>
+                        <div class="product-finder-bar">
+                            <lightning-input
+                                type="search"
+                                label="Search Products"
+                                placeholder="Search by product name, code, or description"
+                                value={productSearchTerm}
+                                onchange={handleProductSearch}
+                                onfocus={handleProductSearchFocus}>
+                            </lightning-input>
+                            <div class="product-finder-actions">
+                                <template if:true={showProductSearchResults}>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label="Cancel"
+                                        class="product-finder-action"
+                                        onclick={handleCancelProductSearchResults}
+                                        disabled={saving}>
+                                    </lightning-button>
+                                </template>
+                                <lightning-button
+                                    variant="brand"
+                                    label={addSearchSelectedLabel}
+                                    class="product-finder-action"
+                                    onclick={handleAddSearchSelectedProducts}
+                                    disabled={disableAddSearchProducts}>
+                                </lightning-button>
+                            </div>
+                        </div>
+
+                        <template if:true={showProductSearchResults}>
+                            <div class="product-search-results">
+                                <div class="product-search-result-header">
+                                    <span>Select</span>
+                                    <span>Product</span>
+                                    <span>Cost</span>
+                                    <span>Sales Price</span>
+                                    <span>Description</span>
+                                </div>
+                                <div class="product-search-list">
+                                    <template for:each={productSearchResults} for:item="product">
+                                        <div key={product.id} class={product.rowClass}>
+                                            <lightning-input
+                                                type="checkbox"
+                                                variant="label-hidden"
+                                                checked={product.isSelected}
+                                                data-pbe-id={product.id}
+                                                onchange={handleSearchProductSelection}
+                                                disabled={product.isCheckboxDisabled}>
+                                            </lightning-input>
+                                            <span class="product-search-result-name">{product.productName}</span>
+                                            <span>{product.formattedCost}</span>
+                                            <span>{product.formattedListPrice}</span>
+                                            <span class="product-search-result-description">{product.description}</span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="inline-grid">
+                        <div class="inline-grid-main">
+                            <div class="inline-grid-sheet">
+                                <div class="inline-grid-header">
+                                    <div>Product</div>
+                                    <div class="align-right">Cost</div>
+                                    <div class="align-right">Sales Price</div>
+                                    <div class="align-right">Qty</div>
+                                    <div>Description</div>
+                                    <div class="include-column">Include in Quote</div>
+                                    <div class="inline-remove-header">Remove</div>
+                                </div>
+                                <div class="inline-grid-body">
+                                    <template if:true={hasNoLines}>
+                                        <div class="inline-empty-state">
+                                            No products added yet. Click <strong>Add Item</strong> to start.
+                                        </div>
+                                    </template>
+                                    <template for:each={lines} for:item="line">
+                                        <div key={line.id} class="inline-grid-row">
+                                            <div class="inline-product-cell">
+                                                <lightning-input
+                                                    variant="label-hidden"
+                                                    value={line.productSearchTerm}
+                                                    disabled>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="inline-grid-field">
+                                                <lightning-input
+                                                    type="number"
+                                                    formatter="currency"
+                                                    variant="label-hidden"
+                                                    value={line.cost}
+                                                    disabled>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="inline-grid-field">
+                                                <lightning-input
+                                                    type="number"
+                                                    formatter="currency"
+                                                    variant="label-hidden"
+                                                    step="0.01"
+                                                    value={line.unitPrice}
+                                                    data-row-id={line.id}
+                                                    data-field="unitPrice"
+                                                    onchange={handleLineFieldChange}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="inline-grid-field">
+                                                <lightning-input
+                                                    type="number"
+                                                    variant="label-hidden"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    value={line.quantity}
+                                                    data-row-id={line.id}
+                                                    data-field="quantity"
+                                                    onchange={handleLineFieldChange}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="inline-grid-field">
+                                                <lightning-input
+                                                    variant="label-hidden"
+                                                    value={line.description}
+                                                    data-row-id={line.id}
+                                                    data-field="description"
+                                                    onchange={handleLineFieldChange}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="include-cell">
+                                                <lightning-input
+                                                    type="checkbox"
+                                                    variant="label-hidden"
+                                                    checked={line.includeInQuote}
+                                                    data-row-id={line.id}
+                                                    data-field="includeInQuote"
+                                                    onchange={handleLineFieldChange}>
+                                                </lightning-input>
+                                            </div>
+                                            <div class="inline-remove-cell">
+                                                <lightning-button-icon
+                                                    icon-name="utility:close"
+                                                    variant="bare"
+                                                    alternative-text="Remove line"
+                                                    data-row-id={line.id}
+                                                    onclick={handleRemoveLine}>
+                                                </lightning-button-icon>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </lightning-card>
+
+            <div class="footer-bar slds-grid slds-grid_align-end slds-grid_vertical-align-center slds-m-top_small">
+                <lightning-button class="slds-m-right_small" variant="neutral" label="Cancel" onclick={handleCancel} disabled={saving}> </lightning-button>
+                <lightning-button variant="brand" label={saveButtonLabel} onclick={handleSave} disabled={saving}>
+                </lightning-button>
+            </div>
+        </div>
+    </template>
+</template>

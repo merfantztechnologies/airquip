@@ -1,0 +1,52 @@
+<template>
+    <!-- The lightning-quick-action-panel adds the standard modal header and footer styling -->
+    <lightning-quick-action-panel header="Book Appointment">
+        
+        <!-- Spinner while Case data is loading -->
+        <template if:false={isLoaded}>
+            <div class="slds-is-relative slds-p-around_large slds-m-bottom_large">
+                <lightning-spinner alternative-text="Loading..." size="medium"></lightning-spinner>
+            </div>
+        </template>
+
+        <!-- Custom Form UI -->
+        <template if:true={isLoaded}>
+            <lightning-record-edit-form object-api-name="fax__Job__c" onsuccess={handleSuccess}>
+                <lightning-messages></lightning-messages>
+
+                <!-- Hidden mapped fields -->
+                <lightning-input-field field-name="fax__Source_Case__c" value={recordId} class="slds-hide"></lightning-input-field>
+                <lightning-input-field field-name="fax__Customer__c" value={accountId} class="slds-hide"></lightning-input-field>
+
+                <div class="slds-grid slds-wrap slds-gutters">
+                    <!-- Priority -->
+                    <div class="slds-col slds-size_1-of-1">
+                        <lightning-input-field field-name="fax__Urgency__c"></lightning-input-field>
+                    </div>
+
+                    <!-- Job Category -->
+                    <div class="slds-col slds-size_1-of-1">
+                        <lightning-input-field field-name="fax__Visit_Type__c"></lightning-input-field>
+                    </div>
+                     
+                        <div class="slds-col slds-size_1-of-1">
+                        <lightning-input-field field-name="fax__Planned_Visit_Date_Time__c"></lightning-input-field>
+                    </div>
+
+                    <!-- Contact (Read-Only but visible) -->
+                    <div class="slds-col slds-size_1-of-1">
+                        <lightning-input-field field-name="fax__Contact__c" value={contactId} disabled="true"></lightning-input-field>
+                    </div>
+                </div>
+
+             
+            </lightning-record-edit-form>
+
+        </template>
+   <!-- Footer Buttons mapped to the quick action panel's footer slot -->
+                <div slot="footer">
+                  <lightning-button variant="neutral" label="Cancel" onclick={closeAction} class="slds-m-right_small"></lightning-button>
+            <!-- Changed type="submit" to onclick handler -->
+            <lightning-button variant="brand" label="Create Job" onclick={handleSubmit}></lightning-button>   </div>
+    </lightning-quick-action-panel>
+</template>

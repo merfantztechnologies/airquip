@@ -1,0 +1,233 @@
+/* ── Dropdowns & pills ─────────────────────────────────────────────────────── */
+.slds-dropdown {
+    z-index: 9500;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+.file-pill-container {
+    max-height: 120px;
+    overflow-y: auto;
+    background: #fafafa;
+    border-radius: 0.5rem;
+}
+
+lightning-pill {
+    cursor: default;
+}
+
+.slds-box {
+    border: 1px solid #e5e5e5;
+}
+
+.slds-backdrop {
+    background: transparent !important;
+    opacity: 2 !important;
+}
+
+/* ── Email header ──────────────────────────────────────────────────────────── */
+.custom-header {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FORMAT PICKER MODAL
+══════════════════════════════════════════════════════════════════════════════ */
+.format-picker-container {
+    min-width: 720px;
+    max-width: 860px;
+    width: 65vw;
+}
+
+.format-picker-content {
+    padding: 1.25rem 1.75rem 1.5rem;
+    overflow: visible;
+}
+
+.quote-preview-modal-header {
+    position: relative;
+}
+
+.quote-preview-modal-close {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.format-subtitle {
+    color: #444;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+/* ── Main picker card: left dropdown + right preview ─────────────────────── */
+.picker-card {
+    display: flex;
+    gap: 0;
+    border: 1px solid #d8d8d8;
+    border-radius: 10px;
+    overflow: visible;
+    min-height: 235px;
+}
+
+/* LEFT panel */
+.picker-left {
+    width: 48%;
+    padding: 16px 18px;
+    border-right: 1px solid #e0e0e0;
+    background: #f8f9fb;
+    border-radius: 10px 0 0 10px;
+    position: relative;
+}
+
+.picker-left-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 10px 0;
+}
+
+/* Dropdown trigger button */
+.picker-dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border: 1.5px solid #c9d0d9;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #16325c;
+    font-weight: 500;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    user-select: none;
+}
+
+.picker-dropdown-trigger:hover,
+.picker-dropdown-trigger_open {
+    border-color: #0070d2;
+    box-shadow: 0 0 0 2px rgba(0, 112, 210, 0.15);
+}
+
+.picker-dropdown-value {
+    flex: 1;
+    margin-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.picker-dropdown-arrow {
+    flex-shrink: 0;
+    color: #6b7280;
+}
+
+/* Dropdown menu */
+.picker-dropdown-menu {
+    position: absolute;
+    top: 78px;
+    left: 18px;
+    right: 18px;
+    z-index: 9999;
+    background: #fff;
+    border: 1.5px solid #c9d0d9;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.picker-dropdown-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+}
+
+/* Each option row */
+.picker-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.12s ease;
+}
+
+.picker-option:last-child {
+    border-bottom: none;
+}
+
+.picker-option:hover {
+    background: #f0f7ff;
+}
+
+.picker-option_active {
+    background: #eaf3ff;
+}
+
+.picker-option-inner {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    flex: 1;
+}
+
+.picker-option-doc-icon {
+    --slds-c-icon-color-foreground-default: #0070d2;
+}
+
+.picker-option-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #16325c;
+    margin: 0 0 2px 0;
+}
+
+.picker-option-desc {
+    font-size: 0.76rem;
+    color: #6b7280;
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* RIGHT panel */
+.picker-right {
+    width: 52%;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: #fff;
+    border-radius: 0 10px 10px 0;
+}
+
+.picker-right-icon {
+    color: #0070d2;
+    --slds-c-icon-color-foreground: #0070d2;
+    --slds-c-icon-color-foreground-default: #0070d2;
+    margin-bottom: 10px;
+}
+
+.picker-right-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #16325c;
+    margin: 0 0 6px 0;
+}
+
+.picker-right-desc {
+    font-size: 0.84rem;
+    color: #555;
+    line-height: 1.5;
+    margin: 0;
+}

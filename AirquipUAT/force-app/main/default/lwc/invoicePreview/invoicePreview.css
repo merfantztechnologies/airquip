@@ -1,0 +1,224 @@
+/*
+ * Quick Action panels often use transform; that makes position:fixed descendants
+ * layout inside the small panel (tiny PDF in the corner). This modal uses
+ * flex + explicit min-heights so the iframe fills the available area whether
+ * the host is full viewport or the action panel.
+ */
+/* ===== Modal Container — fill the overlay (host height is explicit) ===== */
+.pdf-modal-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    margin: 0 !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+}
+
+/* ===== White Header ===== */
+.pdf-modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #dddbda !important;
+    padding: 1rem 1.5rem !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    min-height: 56px !important;
+}
+
+.pdf-modal-title {
+    color: #181818 !important;
+    font-weight: 500 !important;
+    font-size: 1.1rem !important;
+    text-align: center !important;
+}
+
+/* Header close removed — do not reserve space for .slds-modal__close */
+.pdf-modal-header--no-close .pdf-modal-title {
+    width: 100%;
+}
+
+/* SLDS modal content: remove caps / padding that shrink the PDF area */
+.pdf-modal-content.slds-modal__content {
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/*
+ * flex: 1 1 0 + min-height: 0 is required so this flex child actually receives
+ * a computed height (otherwise absolute iframe can leave parent at 0).
+ */
+.pdf-modal-content {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    background: #3c3c3c !important;
+    position: relative !important;
+    z-index: 0 !important;
+}
+
+/* Fill the entire gray content box; iframe percentages resolve to this box */
+.pdf-frame-wrapper {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.pdf-loading-hint {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #3c3c3c !important;
+}
+
+/* ===== iframe ===== */
+.pdf-frame {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    border: none !important;
+    display: block !important;
+    box-sizing: border-box !important;
+}
+
+/* ===== White Footer ===== */
+.pdf-modal-footer {
+    background: #ffffff !important;
+    border-top: 1px solid #dddbda !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: center !important;
+    padding: 0.75rem 1.5rem !important;
+    flex-shrink: 0 !important;
+    gap: 8px !important;
+    position: relative !important;
+    z-index: 20 !important;
+    pointer-events: auto !important;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+    :host {
+        height: 100vh !important;
+        max-height: none !important;
+    }
+
+    .pdf-modal-container {
+        border-radius: 0 !important;
+    }
+}
+
+/* Backdrop first in DOM — covers full LWC host (works inside Quick Action) */
+.invoice-preview-backdrop {
+    position: absolute !important;
+    inset: 0 !important;
+    background: rgba(8, 7, 7, 0.6) !important;
+    z-index: 1 !important;
+}
+
+/*
+ * Host: explicit height so flex + absolute iframe get real pixels.
+ * Quick Action panels often break %/vh without this.
+ */
+:host {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: min(88vh, 900px) !important;
+    min-height: 520px !important;
+    max-height: 92vh !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+/* Save & Send: allow full composer + PDF to scroll instead of clipping */
+:host(.composer-open) {
+    height: min(90vh, 940px) !important;
+    max-height: 92vh !important;
+    min-height: 640px !important;
+    overflow: hidden !important;
+    overflow-x: hidden !important;
+}
+
+/* Modal layer above backdrop — fills host; inner card stretches */
+.invoice-preview-modal.slds-modal {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    box-sizing: border-box !important;
+    padding: 0.75rem !important;
+}
+
+.composer-shell {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.composer-header {
+    flex-shrink: 0;
+}
+
+.composer-card {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+}
+
+.composer-scroll-region {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.composer-body-field {
+    margin-bottom: 0.5rem;
+}
+
+.composer-attachments {
+    margin: 0.75rem 1rem 1rem;
+}
+
+.composer-actions {
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem 1rem;
+    border-top: 1px solid #dddbda;
+    background: #ffffff;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+}

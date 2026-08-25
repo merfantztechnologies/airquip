@@ -1,0 +1,683 @@
+<template>
+    <div class="main-container order-invoice-screen-action">
+        <!-- Page Header -->
+        <div class="page-header">
+            <lightning-icon icon-name="standard:orders" size="small"></lightning-icon>
+            <h1 class="slds-page-header__title">New Purchase Order</h1>
+        </div>
+
+        <!-- Loading panel spinner -->
+        <template if:true={loading}>
+            <div class="loading-panel">
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={loading}>
+            <!-- Saving Overlay -->
+            <template if:true={saving}>
+                <div class="saving-overlay">
+                    <lightning-spinner alternative-text="Saving" size="medium"></lightning-spinner>
+                    <div class="saving-message">Creating Purchase Order...</div>
+                </div>
+            </template>
+
+            <!-- Workspace Body -->
+            <div class="workspace-body">
+                <template if:true={hasAnyDropdownOpen}>
+                    <div class="dropdown-backdrop" onclick={handleCloseAllDropdowns}></div>
+                </template>
+
+                <!-- Section 1: Information -->
+                <div class="workspace-section">
+                    <div class="section-header-bar">
+                        <h3 class="section-header-bar__title">Information</h3>
+                    </div>
+                    <div class="section-body">
+                        <div class="slds-grid slds-wrap slds-gutters invoice-info-grid">
+                            <!-- Left Column -->
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 invoice-info-column">
+                                <lightning-input
+                                    label="PO Number"
+                                    data-field="poNumber"
+                                    value={poNumber}
+                                    onchange={handlePoNumberChange}
+                                    required
+                                    disabled={saving}>
+                                </lightning-input>
+
+                                <lightning-record-picker
+                                    label="Vendor"
+                                    placeholder="Search Accounts..."
+                                    object-api-name="Account"
+                                    value={vendorId}
+                                    onchange={handleVendorChange}
+                                    required
+                                    disabled={saving}>
+                                </lightning-record-picker>
+
+                                <lightning-input
+                                    type="date"
+                                    label="PO Date"
+                                    data-field="poDate"
+                                    value={poDate}
+                                    onchange={handlePoDateChange}
+                                    class="invoice-date-input"
+                                    disabled={saving}>
+                                </lightning-input>
+
+                                <lightning-combobox
+                                    label="Status"
+                                    value={status}
+                                    placeholder="--None--"
+                                    options={statusOptions}
+                                    onchange={handleStatusChange}
+                                    disabled={saving}>
+                                </lightning-combobox>
+
+                                <div class={opportunityElementClass}>
+                                    <label class="slds-form-element__label">Opportunity</label>
+                                    <div class="slds-form-element__control">
+                                        <div class={opportunityComboboxClass}>
+                                            <div class="slds-combobox_container">
+                                                <!-- Selected State -->
+                                                <template if:true={hasOpportunitySelected}>
+                                                    <div class="slds-combobox__form-element" role="none">
+                                                        <div class="custom-pill-wrapper">
+                                                            <span class="custom-pill-icon">
+                                                                <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
+                                                            </span>
+                                                            <span class="custom-pill-text" title={selectedOpportunityLabel}>{selectedOpportunityLabel}</span>
+                                                            <lightning-button-icon
+                                                                icon-name="utility:close"
+                                                                variant="bare"
+                                                                alternative-text="Clear"
+                                                                title="Clear"
+                                                                onclick={handleClearOpportunity}
+                                                                disabled={saving}
+                                                                class="custom-pill-close">
+                                                            </lightning-button-icon>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Search Input State -->
+                                                <template if:false={hasOpportunitySelected}>
+                                                    <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                        <lightning-input
+                                                            type="search"
+                                                            label="Opportunity"
+                                                            variant="label-hidden"
+                                                            placeholder="Search Opportunities..."
+                                                            value={opportunitySearchTerm}
+                                                            onchange={handleOpportunitySearchChange}
+                                                            onfocus={handleOpportunityFocus}
+                                                            onclick={handleOpportunityClick}
+                                                            onblur={handleOpportunityBlur}
+                                                            disabled={saving}>
+                                                        </lightning-input>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Dropdown Menu -->
+                                                <template if:true={showOpportunityDropdown}>
+                                                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid custom-lookup-dropdown" role="listbox">
+                                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                            <!-- Filtered Results -->
+                                                            <template for:each={filteredOpportunityOptions} for:item="opt">
+                                                                <li key={opt.value} role="presentation" class="slds-listbox__item" data-value={opt.value} onmousedown={handleOptionMouseDown} onclick={handleSelectOpportunity}>
+                                                                    <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                                                        <span class="slds-media__figure slds-listbox__option-icon">
+                                                                            <lightning-icon icon-name="standard:opportunity" size="small"></lightning-icon>
+                                                                        </span>
+                                                                        <span class="slds-media__body">
+                                                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{opt.label}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            </template>
+
+                                                            <!-- Empty Search Results -->
+                                                            <template if:true={hasNoOpportunityResults}>
+                                                                <li role="presentation" class="slds-listbox__item no-results-item">
+                                                                    <span class="slds-p-around_small slds-text-color_weak">No records found</span>
+                                                                </li>
+                                                            </template>
+
+                                                            <!-- New Opportunity Quick Action -->
+                                                            <li role="presentation" class="slds-listbox__item new-record-item" onmousedown={handleOptionMouseDown} onclick={handleNewOpportunity}>
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_entity" role="option">
+                                                                    <span class="slds-media__figure slds-listbox__option-icon">
+                                                                        <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity brand-text">New Opportunity</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class={orderElementClass}>
+                                    <label class="slds-form-element__label">Order</label>
+                                    <div class="slds-form-element__control">
+                                        <div class={orderComboboxClass}>
+                                            <div class="slds-combobox_container">
+                                                <!-- Selected State -->
+                                                <template if:true={hasOrderSelected}>
+                                                    <div class="slds-combobox__form-element" role="none">
+                                                        <div class="custom-pill-wrapper">
+                                                            <span class="custom-pill-icon">
+                                                                <lightning-icon icon-name="standard:orders" size="small"></lightning-icon>
+                                                            </span>
+                                                            <span class="custom-pill-text" title={selectedOrderLabel}>{selectedOrderLabel}</span>
+                                                            <lightning-button-icon
+                                                                icon-name="utility:close"
+                                                                variant="bare"
+                                                                alternative-text="Clear"
+                                                                title="Clear"
+                                                                onclick={handleClearOrder}
+                                                                disabled={saving}
+                                                                class="custom-pill-close">
+                                                            </lightning-button-icon>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Search Input State -->
+                                                <template if:false={hasOrderSelected}>
+                                                    <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                        <lightning-input
+                                                            type="search"
+                                                            label="Order"
+                                                            variant="label-hidden"
+                                                            placeholder="Search Orders..."
+                                                            value={orderSearchTerm}
+                                                            onchange={handleOrderSearchChange}
+                                                            onfocus={handleOrderFocus}
+                                                            onclick={handleOrderClick}
+                                                            onblur={handleOrderBlur}
+                                                            disabled={saving}>
+                                                        </lightning-input>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Dropdown Menu -->
+                                                <template if:true={showOrderDropdown}>
+                                                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid custom-lookup-dropdown" role="listbox">
+                                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                            <!-- Filtered Results -->
+                                                            <template for:each={filteredOrderOptions} for:item="opt">
+                                                                <li key={opt.value} role="presentation" class="slds-listbox__item" data-value={opt.value} onmousedown={handleOptionMouseDown} onclick={handleSelectOrder}>
+                                                                    <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                                                        <span class="slds-media__figure slds-listbox__option-icon">
+                                                                            <lightning-icon icon-name="standard:orders" size="small"></lightning-icon>
+                                                                        </span>
+                                                                        <span class="slds-media__body">
+                                                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{opt.label}</span>
+                                                                        </span>
+                                                                    </div>
+                                                                </li>
+                                                            </template>
+
+                                                            <!-- Empty Search Results -->
+                                                            <template if:true={hasNoOrderResults}>
+                                                                <li role="presentation" class="slds-listbox__item no-results-item">
+                                                                    <span class="slds-p-around_small slds-text-color_weak">No records found</span>
+                                                                </li>
+                                                            </template>
+
+                                                            <!-- New Order Quick Action -->
+                                                            <li role="presentation" class="slds-listbox__item new-record-item" onmousedown={handleOptionMouseDown} onclick={handleNewOrder}>
+                                                                <div class="slds-media slds-listbox__option slds-listbox__option_entity" role="option">
+                                                                    <span class="slds-media__figure slds-listbox__option-icon">
+                                                                        <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
+                                                                    </span>
+                                                                    <span class="slds-media__body">
+                                                                        <span class="slds-listbox__option-text slds-listbox__option-text_entity brand-text">New Order</span>
+                                                                    </span>
+                                                                </div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column: Address -->
+                            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 invoice-info-column">
+                                <lightning-textarea
+                                    label="Shipping Street"
+                                    data-field="shippingStreet"
+                                    value={shippingStreet}
+                                    onchange={handleStreetChange}
+                                    disabled={saving}>
+                                </lightning-textarea>
+
+                                <lightning-input
+                                    label="Shipping City"
+                                    data-field="shippingCity"
+                                    value={shippingCity}
+                                    onchange={handleCityChange}
+                                    disabled={saving}>
+                                </lightning-input>
+
+                                <lightning-input
+                                    label="Shipping State"
+                                    data-field="shippingState"
+                                    value={shippingState}
+                                    onchange={handleStateChange}
+                                    disabled={saving}>
+                                </lightning-input>
+
+                                <lightning-input
+                                    label="Shipping Postal Code"
+                                    data-field="shippingPostalCode"
+                                    value={shippingPostalCode}
+                                    onchange={handlePostalCodeChange}
+                                    disabled={saving}>
+                                </lightning-input>
+
+                                <lightning-input
+                                    label="Shipping Country"
+                                    data-field="shippingCountry"
+                                    value={shippingCountry}
+                                    onchange={handleCountryChange}
+                                    disabled={saving}>
+                                </lightning-input>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Purchase Order Line Items -->
+                <div class="workspace-section">
+                    <div class="section-header-bar section-header-bar_with-action">
+                        <h3 class="section-header-bar__title">Purchase Order Line Items</h3>
+                        <div class="section-header-bar__actions">
+                            <lightning-button
+                                label="Add Item"
+                                icon-name="utility:add"
+                                variant="brand-outline"
+                                onclick={handleShowProducts}
+                                disabled={saving}>
+                            </lightning-button>
+                        </div>
+                    </div>
+
+                    <div class="section-body">
+                        <!-- Product Finder -->
+                        <template if:true={showProductFinder}>
+                            <div class="product-finder" onclick={handleProductFinderClick}>
+                                <div class="product-finder-bar">
+                                    <lightning-input
+                                        type="search"
+                                        label="Search Products"
+                                        placeholder="Search by product name, code, or description"
+                                        value={productSearchTerm}
+                                        onchange={handleProductSearch}
+                                        onfocus={handleProductSearchFocus}
+                                        disabled={saving}>
+                                    </lightning-input>
+                                    <div class="product-finder-actions">
+                                        <template if:true={showProductSearchResults}>
+                                            <lightning-button
+                                                variant="neutral"
+                                                label="Cancel"
+                                                class="product-finder-action"
+                                                onclick={handleCancelProductSearchResults}
+                                                disabled={saving}>
+                                            </lightning-button>
+                                        </template>
+                                        <lightning-button
+                                            variant="brand"
+                                            label={addSearchSelectedLabel}
+                                            class="product-finder-action"
+                                            onclick={handleAddSearchSelectedProducts}
+                                            disabled={disableAddSearchProducts}>
+                                        </lightning-button>
+                                    </div>
+                                </div>
+
+                                <template if:true={showProductSearchResults}>
+                                    <div class="product-search-results">
+                                        <div class="product-search-result-header">
+                                            <span>Select</span>
+                                            <span>Product</span>
+                                            <span>Cost</span>
+                                            <span>Sales Price</span>
+                                            <span>Description</span>
+                                        </div>
+                                        <div class="product-search-list">
+                                            <template for:each={productSearchResults} for:item="product">
+                                                <div key={product.pricebookEntryId} class={product.rowClass}>
+                                                    <lightning-input
+                                                        type="checkbox"
+                                                        variant="label-hidden"
+                                                        checked={product.isSelected}
+                                                        disabled={product.isCheckboxDisabled}
+                                                        data-pbe-id={product.pricebookEntryId}
+                                                        onchange={handleSearchProductSelection}>
+                                                    </lightning-input>
+                                                    <span class="product-search-result-name">{product.productName}</span>
+                                                    <span>{product.formattedCost}</span>
+                                                    <span>{product.formattedSalesPrice}</span>
+                                                    <span class="product-search-result-description">{product.productDescription}</span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- Line Items Table -->
+                        <div class="line-grid-wrap">
+                            <table class="slds-table slds-table_cell-buffer slds-table_fixed-layout invoice-line-table">
+                                <thead>
+                                    <tr class="slds-line-height_reset">
+                                        <th>Product</th>
+                                        <th>Qty</th>
+                                        <th>Rate</th>
+                                        <th>Class</th>
+                                        <th>Customer</th>
+                                        <th>Description</th>
+                                        <th>Total</th>
+                                        <th>Remove</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template for:each={activeLines} for:item="line">
+                                        <tr key={line.key}>
+                                            <td class="line-product-cell">
+                                                <div class="product-name" title={line.productName}>{line.productName}</div>
+                                            </td>
+                                            <td>
+                                                <lightning-input
+                                                    type="number"
+                                                    variant="label-hidden"
+                                                    min="0.01"
+                                                    step="0.01"
+                                                    data-key={line.key}
+                                                    data-field="quantity"
+                                                    value={line.quantity}
+                                                    onchange={handleLineChange}
+                                                    disabled={saving}>
+                                                </lightning-input>
+                                            </td>
+                                            <td>
+                                                <lightning-input
+                                                    type="number"
+                                                    variant="label-hidden"
+                                                    formatter="currency"
+                                                    min="0"
+                                                    step="0.01"
+                                                    data-key={line.key}
+                                                    data-field="rate"
+                                                    value={line.rate}
+                                                    onchange={handleLineChange}
+                                                    disabled={saving}>
+                                                </lightning-input>
+                                            </td>
+                                            <td class="line-class-cell">
+                                                <lightning-combobox
+                                                    variant="label-hidden"
+                                                    placeholder="--Select Class--"
+                                                    options={classOptions}
+                                                    data-key={line.key}
+                                                    data-field="classId"
+                                                    value={line.classId}
+                                                    onchange={handleLineChange}
+                                                    disabled={saving}
+                                                    class="line-combobox-element">
+                                                </lightning-combobox>
+                                            </td>
+                                            <td class="line-customer-cell">
+                                                <!-- Selected Customer Pill State -->
+                                                <template if:true={line.hasCustomerSelected}>
+                                                    <div class="custom-pill-wrapper custom-line-pill">
+                                                        <span class="custom-pill-icon">
+                                                            <lightning-icon icon-name="standard:account" size="x-small"></lightning-icon>
+                                                        </span>
+                                                        <span class="custom-pill-text" title={line.customerName}>{line.customerName}</span>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:close"
+                                                            variant="bare"
+                                                            alternative-text="Clear"
+                                                            title="Clear"
+                                                            data-key={line.key}
+                                                            onclick={handleClearLineCustomer}
+                                                            disabled={saving}
+                                                            class="custom-pill-close">
+                                                        </lightning-button-icon>
+                                                    </div>
+                                                </template>
+
+                                                <!-- Customer Search Input State -->
+                                                <template if:false={line.hasCustomerSelected}>
+                                                    <div class="custom-lookup-element custom-line-lookup">
+                                                        <div class="slds-combobox_container">
+                                                            <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click slds-is-open">
+                                                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right" role="none">
+                                                                    <lightning-input
+                                                                        type="search"
+                                                                        variant="label-hidden"
+                                                                        placeholder="Search Customer..."
+                                                                        data-key={line.key}
+                                                                        value={line.customerSearchTerm}
+                                                                        onchange={handleLineCustomerSearchChange}
+                                                                        onfocus={handleLineCustomerFocus}
+                                                                        onclick={handleLineCustomerFocus}
+                                                                        onblur={handleLineCustomerBlur}
+                                                                        disabled={saving}>
+                                                                    </lightning-input>
+                                                                </div>
+
+                                                                <!-- Dropdown Menu -->
+                                                                <template if:true={line.showCustomerDropdown}>
+                                                                    <div class="slds-dropdown slds-dropdown_length-5 slds-dropdown_fluid custom-lookup-dropdown line-customer-dropdown" role="listbox">
+                                                                        <ul class="slds-listbox slds-listbox_vertical" role="presentation">
+                                                                            <template for:each={line.filteredCustomerOptions} for:item="opt">
+                                                                                <li key={opt.value} role="presentation" class="slds-listbox__item" data-key={line.key} data-value={opt.value} data-label={opt.label} onmousedown={handleOptionMouseDown} onclick={handleSelectLineCustomer}>
+                                                                                    <div class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta" role="option">
+                                                                                        <span class="slds-media__figure slds-listbox__option-icon">
+                                                                                            <lightning-icon icon-name="standard:account" size="small"></lightning-icon>
+                                                                                        </span>
+                                                                                        <span class="slds-media__body">
+                                                                                            <span class="slds-listbox__option-text slds-listbox__option-text_entity">{opt.label}</span>
+                                                                                        </span>
+                                                                                    </div>
+                                                                                </li>
+                                                                            </template>
+                                                                            <template if:true={line.hasNoCustomerResults}>
+                                                                                <li role="presentation" class="slds-listbox__item no-results-item">
+                                                                                    <span class="slds-p-around_small slds-text-color_weak">No customer accounts found</span>
+                                                                                </li>
+                                                                            </template>
+                                                                        </ul>
+                                                                    </div>
+                                                                </template>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </td>
+                                            <td>
+                                                <lightning-textarea
+                                                    variant="label-hidden"
+                                                    data-key={line.key}
+                                                    data-field="description"
+                                                    value={line.description}
+                                                    onchange={handleLineChange}
+                                                    disabled={saving}>
+                                                </lightning-textarea>
+                                            </td>
+                                            <td>{line.formattedTotal}</td>
+                                            <td>
+                                                <lightning-button-icon
+                                                    icon-name="utility:delete"
+                                                    alternative-text="Delete"
+                                                    title="Delete"
+                                                    data-key={line.key}
+                                                    onclick={handleRemoveLine}
+                                                    disabled={saving}>
+                                                </lightning-button-icon>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Empty State -->
+                        <template if:false={hasLines}>
+                            <div class="empty-state">No line items added.</div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="slds-text-align_right workspace-footer">
+                    <lightning-button
+                        label="Cancel"
+                        class="slds-m-right_small"
+                        onclick={handleCancel}
+                        disabled={saving}>
+                    </lightning-button>
+                    <lightning-button
+                        label="Save & New"
+                        class="slds-m-right_small"
+                        variant="neutral"
+                        onclick={handleSaveAndNew}
+                        disabled={saving}>
+                    </lightning-button>
+                    <lightning-button
+                        variant="brand"
+                        label={saveLabel}
+                        onclick={handleSave}
+                        disabled={disableSave}>
+                    </lightning-button>
+                </div>
+
+            </div>
+        </template>
+
+        <!-- New Opportunity Modal -->
+        <template if:true={showNewOpportunityModal}>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-opp" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCloseOpportunityModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-opp" class="slds-modal__title slds-hyphenate">New Opportunity</h2>
+                    </header>
+                    <lightning-record-edit-form
+                        object-api-name="Opportunity"
+                        onsubmit={handleSubmitOpportunity}
+                        onsuccess={handleOpportunityCreated}
+                        onerror={handleOpportunityError}>
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <lightning-messages></lightning-messages>
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Name" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="AccountId" value={opportunityAccountId} onchange={handleOppAccountChange}></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-combobox
+                                        label="Primary Contact"
+                                        placeholder={contactPlaceholder}
+                                        value={opportunityContactId}
+                                        options={contactOptions}
+                                        onchange={handleOppContactChange}
+                                        disabled={disableContactSelection}
+                                        required>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="StageName" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="CloseDate" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="LeadSource"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Amount"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Notes__c"></lightning-input-field>
+                                </div>
+                            </div>
+                            <lightning-input-field field-name="Contact__c" value={opportunityContactId} class="slds-hide"></lightning-input-field>
+                            <lightning-input-field field-name="ContactId" value={opportunityContactId} class="slds-hide"></lightning-input-field>
+                            <lightning-input-field field-name="AVSFQB__Primary_Contact__c" value={opportunityContactId} class="slds-hide"></lightning-input-field>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button variant="neutral" label="Cancel" onclick={handleCloseOpportunityModal}></lightning-button>
+                            <lightning-button variant="brand" type="submit" label="Save" class="slds-m-left_x-small"></lightning-button>
+                        </footer>
+                    </lightning-record-edit-form>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- New Order Modal -->
+        <template if:true={showNewOrderModal}>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-order" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCloseOrderModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-order" class="slds-modal__title slds-hyphenate">New Order</h2>
+                    </header>
+                    <lightning-record-edit-form
+                        object-api-name="Order"
+                        onsuccess={handleOrderCreated}
+                        onerror={handleOrderError}>
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <lightning-messages></lightning-messages>
+                            <lightning-input-field field-name="AccountId" value={vendorId} required></lightning-input-field>
+                            <div class="slds-m-bottom_small">
+                                <lightning-combobox
+                                    label="Site Contact"
+                                    placeholder={orderContactPlaceholder}
+                                    value={orderContactId}
+                                    options={orderContactOptions}
+                                    onchange={handleOrderContactChange}
+                                    disabled={disableOrderContactSelection}>
+                                </lightning-combobox>
+                                <lightning-input-field field-name="Contact__c" value={orderContactId} class="slds-hide"></lightning-input-field>
+                            </div>
+                            <lightning-input-field field-name="OpportunityId" value={opportunityId} class="slds-hide"></lightning-input-field>
+                            <lightning-input-field field-name="EffectiveDate" required></lightning-input-field>
+                            <lightning-input-field field-name="Status" required></lightning-input-field>
+                            <lightning-input-field field-name="Description"></lightning-input-field>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button variant="neutral" label="Cancel" onclick={handleCloseOrderModal}></lightning-button>
+                            <lightning-button variant="brand" type="submit" label="Save" class="slds-m-left_x-small"></lightning-button>
+                        </footer>
+                    </lightning-record-edit-form>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

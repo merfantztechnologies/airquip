@@ -1,0 +1,107 @@
+<template>
+    <lightning-quick-action-panel header="Reject Quote">
+
+        <!-- Loading State -->
+        <template lwc:if={isLoading}>
+            <div class="slds-is-relative slds-p-around_large">
+                <lightning-spinner
+                    alternative-text="Loading"
+                    size="medium">
+                </lightning-spinner>
+            </div>
+        </template>
+
+        <!-- Main Content: Has Opportunity -->
+        <template lwc:elseif={hasOpportunity}>
+            <div class="slds-p-around_medium">
+
+                <!-- Warning Banner -->
+                <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_medium" role="alert">
+                    <span class="slds-assistive-text">Warning</span>
+                    <span class="slds-icon_container slds-icon-utility-warning slds-m-right_x-small">
+                        <lightning-icon
+                            icon-name="utility:warning"
+                            size="x-small"
+                            alternative-text="Warning">
+                        </lightning-icon>
+                    </span>
+                    <p class="slds-text-body_small">
+    Submitting the details below will mark this quote as <strong>Rejected </strong>
+    and automatically update the related opportunity stage to
+    <strong> {selectedStage}</strong>.
+</p>
+                </div>
+
+                <!-- Opportunity Info Row -->
+                <div class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium">
+                    <div class="slds-media slds-media_center">
+                        <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-opportunity">
+                                <lightning-icon
+                                    icon-name="standard:opportunity"
+                                    size="small"
+                                    alternative-text="Opportunity">
+                                </lightning-icon>
+                            </span>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-text-body_small slds-text-color_weak">Opportunity</p>
+                            <p class="slds-text-heading_small slds-truncate">
+                                <strong>{opportunityName}</strong>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Opportunity Edit Form -->
+                <lightning-record-edit-form
+    record-id={opportunityId}
+    object-api-name="Opportunity">
+
+    <!-- Stage Field -->
+    <lightning-input-field
+        field-name="StageName"
+        value={selectedStage}
+        onchange={handleStageChange}>
+    </lightning-input-field>
+
+    <!-- Lost Reason Field -->
+    <template if:true={showLostReason}>
+        <lightning-input-field
+            field-name="Lost_Reason__c">
+        </lightning-input-field>
+    </template>
+
+    <!-- Notes Field -->
+    <lightning-input-field
+        field-name="Notes__c">
+    </lightning-input-field>
+
+
+
+                    <!-- Action Buttons -->
+                    <div class="slds-m-top_medium slds-text-align_right">
+                        <lightning-button
+                            label="Cancel"
+                            icon-position="left"
+                            onclick={handleCancel}
+                            disabled={isSaving}
+                            class="slds-m-right_x-small">
+                        </lightning-button>
+
+                        <lightning-button
+                            variant="brand"
+                            label="Save"
+                            icon-position="left"
+                            onclick={handleSave}
+                            disabled={isSaving}>
+                        </lightning-button>
+                    </div>
+
+                </lightning-record-edit-form>
+
+            </div>
+        </template>
+
+    </lightning-quick-action-panel>
+</template>

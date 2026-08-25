@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Review_Articles</fullName>
+    <columns>NAME</columns>
+    <columns>Url_Name__c</columns>
+    <columns>Status__c</columns>
+    <columns>Is_Visible_In_App__c</columns>
+    <columns>CREATED_DATE</columns>
+    <filterScope>Everything</filterScope>
+    <filters>
+        <field>Status__c</field>
+        <operation>equals</operation>
+        <value>Review</value>
+    </filters>
+    <label>Review Articles</label>
+</ListView>

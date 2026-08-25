@@ -1,0 +1,223 @@
+<template>
+    <div class="page-root">
+        <lightning-card>
+            <div class="toolbar slds-p-horizontal_medium slds-p-vertical_small">
+                <div class="slds-grid slds-gutters slds-wrap slds-grid_vertical-align-end">
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-12">
+                        <lightning-combobox
+                            label="List View"
+                            value={selectedListViewApiName}
+                            options={listViewOptions}
+                            onchange={handleListViewChange}
+                        ></lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_4-of-12">
+                        <lightning-input
+                            type="search"
+                            label="Search all products"
+                            placeholder="Search by name/code/description"
+                            value={searchTerm}
+                            onchange={handleSearchInput}
+                        ></lightning-input>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-12">
+                        <lightning-combobox
+                            label="Product Family"
+                            value={familyFilter}
+                            options={familyOptions}
+                            onchange={handleFamilyFilterChange}
+                        ></lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-12">
+                        <lightning-combobox
+                            label="Status"
+                            value={activeFilter}
+                            options={activeFilterOptions}
+                            onchange={handleActiveFilterChange}
+                        ></lightning-combobox>
+                    </div>
+                    <div class="slds-col slds-size_1-of-1 slds-large-size_2-of-12 controls-col">
+                        <div class="slds-button-group" role="group">
+                            <lightning-button label="New" variant="brand" onclick={handleNewProduct}></lightning-button>
+                            <lightning-button-icon
+                                icon-name="utility:refresh"
+                                alternative-text="Refresh"
+                                title="Refresh"
+                                onclick={handleRefresh}
+                            ></lightning-button-icon>
+                            <lightning-button-menu
+                                alternative-text="Settings"
+                                icon-name="utility:settings"
+                                menu-alignment="right"
+                                onselect={handleSettingsMenuSelect}
+                            >
+                                <lightning-menu-item value="create" label="New List View"></lightning-menu-item>
+                                <lightning-menu-item value="columns" label="Select Fields to Display"></lightning-menu-item>
+                                <lightning-menu-item
+                                    value="delete"
+                                    label="Delete List View"
+                                    disabled={disableDeleteMenuItem}
+                                ></lightning-menu-item>
+                            </lightning-button-menu>
+                        </div>
+                    </div>
+                </div>
+
+                <template if:true={isSearchMode}>
+                    <div class="slds-m-top_x-small slds-grid slds-grid_align-spread">
+                        <p class="slds-text-body_small search-banner">{searchModeBanner}</p>
+                        <lightning-button
+                            label="Clear search"
+                            variant="base"
+                            onclick={handleClearSearch}
+                        ></lightning-button>
+                    </div>
+                </template>
+                <div class="slds-m-top_x-small meta-row">
+                    <span class="slds-text-body_small slds-text-color_weak">{selectedColumnCountLabel}</span>
+                </div>
+            </div>
+
+            <template if:true={isInitialLoading}>
+                <div class="slds-is-relative slds-p-around_large">
+                    <lightning-spinner alternative-text="Loading products" size="medium"></lightning-spinner>
+                </div>
+            </template>
+
+            <template if:true={errorMessage}>
+                <div class="slds-p-horizontal_medium slds-p-bottom_small">
+                    <div class="slds-text-color_error">{errorMessage}</div>
+                </div>
+            </template>
+
+            <template if:false={isInitialLoading}>
+                <template if:true={showEmptyState}>
+                    <div class="slds-p-around_large slds-text-align_center">
+                        <p class="slds-text-body_regular">No products to display.</p>
+                    </div>
+                </template>
+
+                <template if:true={showDatatable}>
+                    <div class="datatable-wrap slds-p-horizontal_medium">
+                        <template if:true={isTableRefreshing}>
+                            <div class="datatable-refresh-overlay">
+                                <lightning-spinner
+                                    alternative-text="Refreshing products"
+                                    size="medium"
+                                ></lightning-spinner>
+                            </div>
+                        </template>
+                        <lightning-datatable
+                            class="products-datatable"
+                            column-widths-mode="fixed"
+                            key-field="Id"
+                            data={tableRows}
+                            columns={tableColumns}
+                            draft-values={draftValues}
+                            errors={tableErrors}
+                            sorted-by={sortedBy}
+                            sorted-direction={sortedDirection}
+                            default-sort-direction="asc"
+                            onsort={handleSort}
+                            onrowaction={handleRowAction}
+                            onsave={handleSaveEdits}
+                            enable-infinite-loading
+                            onloadmore={handleLoadMore}
+                            load-more-offset="20"
+                            is-loading={isLoadingMore}
+                            show-row-number-column
+                            hide-checkbox-column
+                        ></lightning-datatable>
+                        <template if:true={isLoadingMore}>
+                            <div class="slds-is-relative slds-p-vertical_small">
+                                <lightning-spinner size="small" alternative-text="Loading more products"></lightning-spinner>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <div class="footer slds-p-around_medium slds-grid slds-grid_align-spread">
+                    <span class="slds-text-body_small">{recordCountLabel}</span>
+                </div>
+            </template>
+        </lightning-card>
+    </div>
+
+    <template if:true={showColumnModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Select Fields to Display</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-dual-listbox
+                        label="Columns"
+                        source-label="Available"
+                        selected-label="Visible"
+                        options={columnOptions}
+                        value={selectedColumnFields}
+                        onchange={handleColumnSelectionChange}
+                    ></lightning-dual-listbox>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={handleCloseColumns}></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        variant="brand"
+                        label="Apply"
+                        onclick={handleApplyColumns}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <template if:true={showCreateViewModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <h2 class="slds-text-heading_medium">Create New List View</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium">
+                    <lightning-input
+                        label="List View Name"
+                        value={newViewLabel}
+                        onchange={handleNewViewLabelChange}
+                    ></lightning-input>
+                    <div class="slds-grid slds-gutters slds-m-top_small">
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox
+                                label="Product Family Filter"
+                                value={newViewFamilyFilter}
+                                options={familyOptions}
+                                onchange={handleNewViewFamilyFilterChange}
+                            ></lightning-combobox>
+                        </div>
+                        <div class="slds-col slds-size_1-of-2">
+                            <lightning-combobox
+                                label="Status Filter"
+                                value={newViewActiveFilter}
+                                options={activeFilterOptions}
+                                onchange={handleNewViewActiveFilterChange}
+                            ></lightning-combobox>
+                        </div>
+                    </div>
+                    <p class="slds-m-top_small slds-text-body_small slds-text-color_weak">
+                        Saves selected columns, sort, and the filter conditions above.
+                    </p>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button label="Cancel" onclick={handleCloseCreateView}></lightning-button>
+                    <lightning-button
+                        class="slds-m-left_small"
+                        variant="brand"
+                        label="Save"
+                        onclick={handleSaveView}
+                    ></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>

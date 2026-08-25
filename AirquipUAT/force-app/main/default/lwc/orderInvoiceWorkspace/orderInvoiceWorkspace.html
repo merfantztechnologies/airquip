@@ -1,0 +1,486 @@
+<template>
+    <div class="main-container order-invoice-screen-action">
+        <div class="page-header">
+            <lightning-icon icon-name="standard:invoice" size="small"></lightning-icon>
+            <h1 class="slds-page-header__title">New Invoice</h1>
+        </div>
+
+        <!-- Loading -->
+        <template if:true={loading}>
+            <div class="loading-panel">
+                <lightning-spinner alternative-text="Loading"></lightning-spinner>
+            </div>
+        </template>
+
+        <template if:false={loading}>
+            <!-- Saving -->
+            <template if:true={saving}>
+                <div class="saving-overlay">
+                    <lightning-spinner alternative-text="Saving" size="medium"></lightning-spinner>
+                    <div class="saving-message">Creating invoice...</div>
+                </div>
+            </template>
+
+            <!-- Body -->
+            <div class="workspace-body">
+                <!-- Invoice Information -->
+                <div class="workspace-section">
+                    <div class="section-header-bar">
+                        <h3 class="section-header-bar__title">Invoice Information</h3>
+                    </div>
+                    <div class="section-body">
+                    <div class="slds-grid slds-wrap slds-gutters invoice-info-grid">
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 invoice-info-column">
+                            
+                            <lightning-input label="Customer" value={accountName} disabled></lightning-input>
+                            <div class="contact-field-row">
+                                <div class="contact-picker-wrap">
+                                    <lightning-record-picker
+                                        key={contactPickerKey}
+                                        label="Contact"
+                                        placeholder="Search contacts for this account..."
+                                        object-api-name="Contact"
+                                        value={header.contactId}
+                                        filter={contactFilter}
+                                        matching-info={contactMatchingInfo}
+                                        display-info={contactDisplayInfo}
+                                        disabled={isContactPickerDisabled}
+                                        onchange={handleContactChange}>
+                                    </lightning-record-picker>
+                                </div>
+                                <template if:true={showNewContactButton}>
+                                    <lightning-button
+                                        label="New Contact"
+                                        title="Create a contact for this account"
+                                        variant="neutral"
+                                        class="new-contact-button"
+                                        onclick={handleOpenNewContactModal}
+                                        disabled={isNewContactButtonDisabled}>
+                                    </lightning-button>
+                                </template>
+                            </div>
+                            <lightning-record-picker
+                                label="Sales Person"
+                                placeholder="Search users..."
+                                object-api-name="User"
+                                value={header.salesPersonId}
+                                matching-info={salesPersonMatchingInfo}
+                                display-info={salesPersonDisplayInfo}
+                                disabled={saving}
+                                onchange={handleSalesPersonChange}>
+                            </lightning-record-picker>
+                            
+                            <lightning-input
+                                type="date"
+                                label="Transaction Date"
+                                data-field="transactionDate"
+                                value={header.transactionDate}
+                                onchange={handleHeaderChange}
+                                class="invoice-date-input"
+                                disabled={saving}
+                                required>
+                            </lightning-input>
+                            <lightning-input
+                                type="date"
+                                label="Due Date"
+                                data-field="dueDate"
+                                value={header.dueDate}
+                                onchange={handleHeaderChange}
+                                class="invoice-date-input"
+                                disabled={saving}
+                                required>
+                            </lightning-input>
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" id="invoice-terms-label">Terms</label>
+                                <div class="slds-form-element__control terms-select terms-field-select">
+                                    <button
+                                        type="button"
+                                        class="terms-select-trigger"
+                                        aria-labelledby="invoice-terms-label"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={termsDropdownOpen}
+                                        onclick={toggleTermsDropdown}
+                                        disabled={saving}>
+                                        {termsDisplayLabel}
+                                    </button>
+                                    <template if:true={termsDropdownOpen}>
+                                        <div class="terms-select-dropdown" role="listbox" aria-labelledby="invoice-terms-label">
+                                            <template for:each={termsSelectOptions} for:item="option">
+                                                <button
+                                                    type="button"
+                                                    key={option.value}
+                                                    class={option.optionClass}
+                                                    role="option"
+                                                    aria-selected={option.isSelected}
+                                                    data-value={option.value}
+                                                    onclick={handleTermsOptionSelect}>
+                                                    {option.label}
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <lightning-input label="PO Number" data-field="poNumber"
+                                value={header.poNumber} onchange={handleHeaderChange}>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 invoice-info-column">
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" for="invoice-status">Status</label>
+                                <div class="slds-form-element__control">
+                                    <select id="invoice-status" class="slds-select native-select" data-field="status"
+                                        onchange={handleNativeSelectChange}>
+                                        <template for:each={statusSelectOptions} for:item="option">
+                                            <option key={option.value} value={option.value} selected={option.isSelected}>
+                                                {option.label}
+                                            </option>
+                                        </template>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" id="invoice-class-label">Class</label>
+                                <div class="slds-form-element__control terms-select class-select">
+                                    <button
+                                        type="button"
+                                        class="terms-select-trigger"
+                                        aria-labelledby="invoice-class-label"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={classDropdownOpen}
+                                        onclick={toggleClassDropdown}
+                                        disabled={saving}>
+                                        {classDisplayLabel}
+                                    </button>
+                                    <template if:true={classDropdownOpen}>
+                                        <div class="terms-select-dropdown" role="listbox" aria-labelledby="invoice-class-label">
+                                            <button
+                                                type="button"
+                                                class={classNoneOptionClass}
+                                                role="option"
+                                                aria-selected={classNoneSelected}
+                                                data-value=""
+                                                onclick={handleClassOptionSelect}>
+                                                --None--
+                                            </button>
+                                            <template for:each={classSelectOptions} for:item="option">
+                                                <button
+                                                    type="button"
+                                                    key={option.value}
+                                                    class={option.optionClass}
+                                                    role="option"
+                                                    aria-selected={option.isSelected}
+                                                    data-value={option.value}
+                                                    onclick={handleClassOptionSelect}>
+                                                    {option.label}
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="slds-form-element">
+                                <label class="slds-form-element__label" id="invoice-job-category-label">
+                                    <abbr class="slds-required" title="required">*</abbr>Job Category
+                                </label>
+                                <div class="slds-form-element__control terms-select job-category-select">
+                                    <button
+                                        type="button"
+                                        class="terms-select-trigger"
+                                        aria-labelledby="invoice-job-category-label"
+                                        aria-haspopup="listbox"
+                                        aria-expanded={jobCategoryDropdownOpen}
+                                        onclick={toggleJobCategoryDropdown}
+                                        disabled={saving}>
+                                        {jobCategoryDisplayLabel}
+                                    </button>
+                                    <template if:true={jobCategoryDropdownOpen}>
+                                        <div class="terms-select-dropdown" role="listbox" aria-labelledby="invoice-job-category-label">
+                                            <button
+                                                type="button"
+                                                class={jobCategoryNoneOptionClass}
+                                                role="option"
+                                                aria-selected={jobCategoryNoneSelected}
+                                                data-value=""
+                                                onclick={handleJobCategoryOptionSelect}>
+                                                --None--
+                                            </button>
+                                            <template for:each={jobCategorySelectOptions} for:item="option">
+                                                <button
+                                                    type="button"
+                                                    key={option.value}
+                                                    class={option.optionClass}
+                                                    role="option"
+                                                    aria-selected={option.isSelected}
+                                                    data-value={option.value}
+                                                    onclick={handleJobCategoryOptionSelect}>
+                                                    {option.label}
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <lightning-textarea label="Billing Street" data-field="billingStreet"
+                                value={header.billingStreet} onchange={handleHeaderChange}>
+                            </lightning-textarea>
+                            <lightning-input label="Billing City" data-field="billingCity"
+                                value={header.billingCity} onchange={handleHeaderChange}>
+                            </lightning-input>
+                            <lightning-input label="Billing State" data-field="billingState"
+                                value={header.billingState} onchange={handleHeaderChange}>
+                            </lightning-input>
+                            <lightning-input label="Billing Postal Code" data-field="billingPostalCode"
+                                value={header.billingPostalCode} onchange={handleHeaderChange}>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1">
+                            <lightning-textarea label="Job Description" data-field="jobDescription" 
+                                value={header.jobDescription} onchange={handleHeaderChange}>
+                            </lightning-textarea>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1">
+                            <lightning-textarea label="Job Detail" data-field="jobDetail" 
+                                value={header.jobDetail} onchange={handleHeaderChange}>
+                            </lightning-textarea>
+                        </div>
+                        <div class="slds-col slds-size_1-of-1">
+                            <lightning-textarea label="Engineer Completion Notes" data-field="engineerCompletionNotes" 
+                                value={header.engineerCompletionNotes} onchange={handleHeaderChange}>
+                            </lightning-textarea>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Line Items -->
+                <div class="workspace-section">
+                    <div class="section-header-bar section-header-bar_with-action">
+                        <h3 class="section-header-bar__title">Invoice Line Items</h3>
+                        <div class="section-header-bar__actions">
+                            <lightning-button label="Add Item" icon-name="utility:add" variant="brand-outline"
+                                onclick={handleShowProducts}>
+                            </lightning-button>
+                        </div>
+                    </div>
+
+                    <div class="section-body">
+                    <template if:true={showProductFinder}>
+                    <div class="product-finder" onclick={handleProductFinderClick}>
+                        <div class="product-finder-bar">
+                            <lightning-input
+                                type="search"
+                                label="Search Products"
+                                placeholder="Search by product name, code, or description"
+                                value={productSearchTerm}
+                                onchange={handleProductSearch}
+                                onfocus={handleProductSearchFocus}
+                                disabled={saving}>
+                            </lightning-input>
+                            <div class="product-finder-actions">
+                                <template if:true={showProductSearchResults}>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label="Cancel"
+                                        class="product-finder-action"
+                                        onclick={handleCancelProductSearchResults}
+                                        disabled={saving}>
+                                    </lightning-button>
+                                </template>
+                                <lightning-button
+                                    variant="brand"
+                                    label={addSearchSelectedLabel}
+                                    class="product-finder-action"
+                                    onclick={handleAddSearchSelectedProducts}
+                                    disabled={disableAddSearchProducts}>
+                                </lightning-button>
+                            </div>
+                        </div>
+
+                        <template if:true={showProductSearchResults}>
+                            <div class="product-search-results">
+                                <div class="product-search-result-header">
+                                    <span>Select</span>
+                                    <span>Product</span>
+                                    <span>Cost</span>
+                                    <span>Sales Price</span>
+                                    <span>Description</span>
+                                </div>
+                                <div class="product-search-list">
+                                    <template for:each={productSearchResults} for:item="product">
+                                        <div key={product.pricebookEntryId} class={product.rowClass}>
+                                            <lightning-input
+                                                type="checkbox"
+                                                variant="label-hidden"
+                                                checked={product.isSelected}
+                                                disabled={product.isCheckboxDisabled}
+                                                data-pbe-id={product.pricebookEntryId}
+                                                onchange={handleSearchProductSelection}>
+                                            </lightning-input>
+                                            <span class="product-search-result-name">{product.productName}</span>
+                                            <span>{product.formattedCost}</span>
+                                            <span>{product.formattedSalesPrice}</span>
+                                            <span class="product-search-result-description">{product.productDescription}</span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    </template>
+
+                    <!-- Line Items Table -->
+                    <div class="line-grid-wrap">
+                        <table class="slds-table slds-table_cell-buffer slds-table_fixed-layout invoice-line-table">
+                            <thead>
+                                <tr class="slds-line-height_reset">
+                                    <th>Product</th>
+                                    <th>Description</th>
+                                    <th>Qty</th>
+                                    <th>Cost</th>
+                                    <th>Sales Price</th>
+                                    <th>Taxable</th>
+                                    <th>Total</th>
+                                    <th>Include In Invoice</th>
+                                    <th>Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template for:each={activeLines} for:item="line">
+                                    <tr key={line.key}>
+                                        <td class="line-product-cell">
+                                            <div class="product-name" title={line.productName}>{line.productName}</div>
+                                        </td>
+                                        <td>
+                                            <lightning-textarea variant="label-hidden" data-key={line.key} 
+                                                data-field="description" value={line.description} onchange={handleLineChange}>
+                                            </lightning-textarea>
+                                        </td>
+                                        <td>
+                                            <lightning-input type="number" variant="label-hidden" min="0.01" step="0.01" 
+                                                data-key={line.key} data-field="quantity" value={line.quantity} 
+                                                onchange={handleLineChange}>
+                                            </lightning-input>
+                                        </td>
+                                        <td>{line.formattedCost}</td>
+                                        <td>
+                                            <lightning-input type="number" variant="label-hidden" formatter="currency" 
+                                                min="0" step="0.01" data-key={line.key} data-field="unitPrice" 
+                                                value={line.unitPrice} onchange={handleLineChange}>
+                                            </lightning-input>
+                                        </td>
+                                        <td>
+                                            <lightning-input type="checkbox" variant="label-hidden" 
+                                                checked={line.taxable} disabled>
+                                            </lightning-input>
+                                        </td>
+                                        <td>{line.formattedTotal}</td>
+                                        <td>
+                                            <lightning-input type="checkbox" variant="label-hidden"
+                                                data-key={line.key} data-field="includeInInvoice"
+                                                checked={line.includeInInvoice} onchange={handleLineChange}
+                                                disabled={saving}>
+                                            </lightning-input>
+                                        </td>
+                                        <td>
+                                            <lightning-button-icon icon-name="utility:delete" alternative-text="Delete" 
+                                                title="Delete" data-key={line.key} onclick={handleRemoveLine} 
+                                                disabled={saving}>
+                                            </lightning-button-icon>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty State -->
+                    <template if:false={hasLines}>
+                        <div class="empty-state">No line items added.</div>
+                    </template>
+                    </div>
+                </div>
+                <!-- Footer -->
+                <div class="slds-text-align_right workspace-footer">
+                    <lightning-button label="Cancel" class="slds-m-right_small"
+                        onclick={handleCancel} disabled={saving}>
+                    </lightning-button>
+                    <lightning-button variant="brand" label={saveLabel}
+                        onclick={handleSave} disabled={disableSave}>
+                    </lightning-button>
+                </div>
+            </div>
+        </template>
+
+        <!-- New Contact modal -->
+        <template if:true={showNewContactModal}>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="new-contact-heading"
+                class="slds-modal slds-fade-in-open contact-create-modal">
+                <div class="slds-modal__container contact-create-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={handleCloseNewContactModal}>
+                            <lightning-icon icon-name="utility:close" alternative-text="Close" size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="new-contact-heading" class="slds-modal__title slds-hyphenate">New Contact</h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium slds-is-relative">
+                        <lightning-record-edit-form
+                            key={newContactFormKey}
+                            object-api-name="Contact"
+                            onsuccess={handleContactCreated}
+                            onerror={handleContactCreateError}
+                            onsubmit={handleContactFormSubmit}>
+                            <lightning-messages></lightning-messages>
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input label="Account" value={accountName} disabled></lightning-input>
+                                    <lightning-input-field
+                                        field-name="AccountId"
+                                        value={accountIdForNewContact}
+                                        class="account-id-field-hidden">
+                                    </lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="FirstName"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="LastName" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Email"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <lightning-input-field field-name="Phone"></lightning-input-field>
+                                </div>
+                            </div>
+                            <div class="contact-form-actions slds-grid slds-grid_align-end slds-m-top_medium">
+                                <lightning-button
+                                    label="Cancel"
+                                    onclick={handleCloseNewContactModal}
+                                    disabled={creatingContact}>
+                                </lightning-button>
+                                <lightning-button
+                                    class="slds-m-left_x-small"
+                                    variant="brand"
+                                    type="submit"
+                                    label="Save Contact"
+                                    disabled={creatingContact}>
+                                </lightning-button>
+                            </div>
+                        </lightning-record-edit-form>
+                        <template if:true={creatingContact}>
+                            <div class="contact-form-spinner">
+                                <lightning-spinner alternative-text="Creating contact" size="small"></lightning-spinner>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open contact-create-backdrop"></div>
+        </template>
+    </div>
+</template>

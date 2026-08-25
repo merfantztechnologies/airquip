@@ -1,0 +1,364 @@
+<template>
+
+    <!-- ══════════════════════════════════════════════
+         STEP 1: FORMAT PICKER MODAL
+         Only shown when Scope of Work has a value
+    ═══════════════════════════════════════════════ -->
+    <template if:true={showFormatPicker}>
+        <section role="dialog" tabindex="-1" aria-modal="true"
+                 class="slds-modal slds-fade-in-open slds-align_absolute-center">
+            <div class="slds-modal__container format-picker-container">
+
+                <header class="slds-modal__header quote-preview-modal-header">
+                    <h2 class="slds-text-heading_medium">Select Quote Format</h2>
+                    <button class="slds-button slds-button_icon quote-preview-modal-close"
+                            title="Close" onclick={handleCancel}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_large format-picker-content">
+                    <p class="slds-text-body_regular slds-m-bottom_large format-subtitle">
+                        Choose the template you'd like to use for this quote.
+                    </p>
+
+                    <!-- ── Single card with dropdown on left ── -->
+                    <div class="picker-card">
+
+                        <!-- LEFT: Dropdown selector -->
+                        <div class="picker-left">
+                            <p class="picker-left-label">Select Template</p>
+
+                            <!-- Dropdown trigger -->
+                            <div class={dropdownTriggerClass} onclick={toggleDropdown}>
+                                <span class="picker-dropdown-value">{selectedFormatLabel}</span>
+                                <lightning-icon icon-name="utility:chevrondown" size="x-small"
+                                               class="picker-dropdown-arrow"></lightning-icon>
+                            </div>
+
+                            <!-- Dropdown menu -->
+                            <template if:true={isDropdownOpen}>
+                                <div class="picker-dropdown-menu" onclick={handleDropdownBackdropClick}>
+                                    <ul class="picker-dropdown-list" role="listbox">
+
+                                        <li class={summaryOptionClass}
+                                            role="option"
+                                            data-value="QuoteSummaryFormatPreview"
+                                            onclick={handleDropdownSelect}>
+                                            <div class="picker-option-inner">
+                                                <lightning-icon icon-name="utility:description" size="x-small"
+                                                               variant="brand"
+                                                               class="slds-m-right_x-small picker-option-doc-icon"></lightning-icon>
+                                                <div>
+                                                    <p class="picker-option-title">Quote Summary</p>
+                                                    <p class="picker-option-desc">
+                                                        Proposal-style with scope of work &amp; totals
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <template if:true={isQuoteSummarySelected}>
+                                                <lightning-icon icon-name="utility:check" size="x-small"
+                                                               variant="brand"></lightning-icon>
+                                            </template>
+                                        </li>
+                                        
+                                        <li class={previewOptionClass}
+                                            role="option"
+                                            data-value="QuotePreview"
+                                            onclick={handleDropdownSelect}>
+                                            <div class="picker-option-inner">
+                                                <lightning-icon icon-name="doctype:pdf" size="x-small"
+                                                               class="slds-m-right_x-small"></lightning-icon>
+                                                <div>
+                                                    <p class="picker-option-title">Quote Preview</p>
+                                                    <p class="picker-option-desc">
+                                                        Full itemised quote with product lines &amp; pricing
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <template if:true={isQuotePreviewSelected}>
+                                                <lightning-icon icon-name="utility:check" size="x-small"
+                                                               variant="brand"></lightning-icon>
+                                            </template>
+                                        </li>
+
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+
+                        <!-- RIGHT: Description of selected format -->
+                        <div class="picker-right">
+                            <lightning-icon icon-name={selectedFormatIcon} size="large"
+                                           variant="brand"
+                                           class="picker-right-icon"></lightning-icon>
+                            <h3 class="picker-right-title">{selectedFormatLabel}</h3>
+                            <p class="picker-right-desc">{selectedFormatDesc}</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <lightning-button
+                        label="Cancel"
+                        variant="neutral"
+                        onclick={handleCancel}>
+                    </lightning-button>
+                    <lightning-button
+                        label="Preview Quote"
+                        variant="brand"
+                        onclick={handleFormatConfirm}
+                        disabled={isFormatConfirmDisabled}
+                        class="slds-m-left_small">
+                    </lightning-button>
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+
+    <!-- ══════════════════════════════════════════════
+         STEP 2: PDF PREVIEW MODAL
+    ═══════════════════════════════════════════════ -->
+    <template if:true={showPdfModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true"
+                 class="slds-modal slds-fade-in-open slds-align_absolute-center">
+            <div class="slds-modal__container" style="min-width:90vw; width:90vw; height:100vh;">
+
+                <header class="slds-modal__header quote-preview-modal-header">
+                    <h2 class="slds-text-heading_medium">
+                        PDF Preview &mdash; {selectedFormatLabel}
+                    </h2>
+                    <button class="slds-button slds-button_icon quote-preview-modal-close"
+                            title="Close" onclick={handleCancel}>
+                        <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
+                    </button>
+                </header>
+
+                <div class="slds-modal__content" style="height:80vh; padding:0;">
+                    <iframe src={pdfUrl}
+                            style="width:100%; height:100%; border:none;"
+                            title="PDF Preview">
+                    </iframe>
+                </div>
+
+                <footer class="slds-modal__footer">
+                    <template if:true={hasScopeOfWork}>
+                        <lightning-button
+                            label="← Change Format"
+                            variant="neutral"
+                            onclick={handleBackToFormatPicker}
+                            class="slds-m-right_small">
+                        </lightning-button>
+                    </template>
+
+                    <lightning-button
+                        label="Save Quote"
+                        variant="brand"
+                        onclick={handleSaveOnly}
+                        disabled={isLoading}
+                        class="slds-m-right_small">
+                    </lightning-button>
+
+                    <lightning-button
+                        label="Save &amp; Send Quote"
+                        variant="brand"
+                        onclick={handleSaveAndSend}
+                        disabled={isLoadingforSaveandsend}>
+                    </lightning-button>
+
+                    <lightning-button
+                        label="Cancel"
+                        variant="neutral"
+                        onclick={handleCancel}
+                        class="slds-m-left_small">
+                    </lightning-button>
+                </footer>
+
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+
+    <!-- ══════════════════════════════════════════════
+         STEP 3: EMAIL COMPOSER
+    ═══════════════════════════════════════════════ -->
+    <template if:true={showEmailComposer}>
+        <div class="slds-text-align_center slds-p-vertical_medium">
+            <h2 class="custom-header">Send Quote Email</h2>
+        </div>
+
+        <lightning-card class="slds-card">
+            <div class="slds-p-around_medium">
+
+                <!-- From -->
+                <lightning-combobox
+                    label="From"
+                    value={fromEmail}
+                    options={fromOptions}
+                    onchange={handleFromChange}>
+                </lightning-combobox>
+
+                <!-- To -->
+                <div class="slds-m-top_small">
+                    <label class="slds-form-element__label">To</label>
+                    <input type="text"
+                           class="slds-input"
+                           value={toInput}
+                           data-field="to"
+                           oninput={handleTyping}
+                           onkeydown={handleKeyPress}
+                           placeholder="Search contact or user email" />
+
+                    <template if:true={toSearchResults.length}>
+                        <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid">
+                            <template for:each={toSearchResults} for:item="item">
+                                <li key={item.Email}
+                                    class="slds-listbox__item"
+                                    data-email={item.Email}
+                                    data-field="to"
+                                    onclick={handleSelect}>
+                                    <div class="slds-listbox__option slds-listbox__option_entity slds-p-horizontal_small">
+                                        <span>{item.Name} ({item.Email})</span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+
+                    <div class="slds-m-top_x-small">
+                        <template for:each={toList} for:item="email">
+                            <lightning-pill key={email} label={email} data-field="to" data-email={email} onremove={removeEmail}></lightning-pill>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Cc -->
+                <div class="slds-m-top_small">
+                    <label class="slds-form-element__label">Cc</label>
+                    <input type="text"
+                           class="slds-input"
+                           value={ccInput}
+                           data-field="cc"
+                           oninput={handleTyping}
+                           onkeydown={handleKeyPress}
+                           placeholder="Search contact or user email" />
+
+                    <template if:true={ccSearchResults.length}>
+                        <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid">
+                            <template for:each={ccSearchResults} for:item="item">
+                                <li key={item.Email}
+                                    class="slds-listbox__item"
+                                    data-email={item.Email}
+                                    data-field="cc"
+                                    onclick={handleSelect}>
+                                    <div class="slds-listbox__option slds-listbox__option_entity slds-p-horizontal_small">
+                                        <span>{item.Name} ({item.Email})</span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+
+                    <div class="slds-m-top_x-small">
+                        <template for:each={ccList} for:item="email">
+                            <lightning-pill key={email} label={email} data-field="cc" data-email={email} onremove={removeEmail}></lightning-pill>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Bcc -->
+                <div class="slds-m-top_small">
+                    <label class="slds-form-element__label">Bcc</label>
+                    <input type="text"
+                           class="slds-input"
+                           value={bccInput}
+                           data-field="bcc"
+                           oninput={handleTyping}
+                           onkeydown={handleKeyPress}
+                           placeholder="Search contact or user email" />
+
+                    <template if:true={bccSearchResults.length}>
+                        <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid">
+                            <template for:each={bccSearchResults} for:item="item">
+                                <li key={item.Email}
+                                    class="slds-listbox__item"
+                                    data-email={item.Email}
+                                    data-field="bcc"
+                                    onclick={handleSelect}>
+                                    <div class="slds-listbox__option slds-listbox__option_entity slds-p-horizontal_small">
+                                        <span>{item.Name} ({item.Email})</span>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </template>
+
+                    <div class="slds-m-top_x-small">
+                        <template for:each={bccList} for:item="email">
+                            <lightning-pill key={email} label={email} data-field="bcc" data-email={email} onremove={removeEmail}></lightning-pill>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Subject -->
+                <lightning-input label="Subject" value={subject} onchange={handleSubjectChange}></lightning-input>
+
+                <!-- Body -->
+                <lightning-input-rich-text label="Body" value={body} onchange={handleBodyChange}></lightning-input-rich-text>
+
+                <!-- Send Button -->
+                <div class="slds-align_absolute-center slds-m-top_medium">
+                    <lightning-button
+                        variant="brand"
+                        label={sendButtonLabel}
+                        onclick={handleSend}
+                        disabled={isSending}>
+                    </lightning-button>
+                </div>
+
+            </div>
+
+            <!-- Attachments -->
+            <div class="slds-m-top_medium slds-p-around_small slds-box slds-theme_default slds-rounded_medium">
+                <label class="slds-form-element__label slds-text-title_caps">Attachments</label>
+
+                <input type="file" multiple class="hidden-file-input" onchange={handleLocalFileUpload} />
+
+                <lightning-button
+                    label="Add Files"
+                    icon-name="utility:upload"
+                    variant="neutral"
+                    class="slds-m-top_x-small"
+                    onclick={triggerFileInput}>
+                </lightning-button>
+
+                <template if:true={attachments.length}>
+                    <div class="slds-grid slds-wrap slds-scrollable_y slds-p-around_x-small file-pill-container slds-m-top_small">
+                        <template for:each={attachments} for:item="file">
+                            <lightning-pill
+                                key={file.title}
+                                label={file.title}
+                                name={file.title}
+                                onremove={handleRemoveAttachment}
+                                class="slds-m-around_x-small">
+                            </lightning-pill>
+                        </template>
+                    </div>
+                </template>
+
+                <template if:false={attachments.length}>
+                    <p class="slds-text-color_weak slds-text-align_center slds-m-top_small">
+                        No attachments added yet.
+                    </p>
+                </template>
+            </div>
+
+        </lightning-card>
+    </template>
+
+</template>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Job_Customer_Must_Match_Invoice</fullName>
+    <active>true</active>
+    <description>Ensures the Job customer matches the Invoice customer before linking a Job to a consolidated Invoice.</description>
+    <errorConditionFormula>AND(
+NOT(ISBLANK(Job__c)),
+NOT(ISBLANK(Invoice__c)),
+Job__r.fax__Customer__c &lt;&gt; Invoice__r.fax__Site__c
+)</errorConditionFormula>
+    <errorDisplayField>Job__c</errorDisplayField>
+    <errorMessage>The Job customer must match the Invoice customer.</errorMessage>
+</ValidationRule>

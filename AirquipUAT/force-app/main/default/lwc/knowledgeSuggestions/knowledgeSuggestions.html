@@ -1,0 +1,324 @@
+<template>
+    <div class={knowledgePanelClass}>
+        <div class="knowledge-header">
+            <h2 class="knowledge-title">Knowledge</h2>
+            <lightning-button
+                label="New Article"
+                variant="neutral"
+                onclick={handleNewArticle}
+            ></lightning-button>
+        </div>
+
+        <div class="knowledge-search slds-m-bottom_small">
+            <lightning-input
+                type="search"
+                label="Search Knowledge"
+                variant="label-hidden"
+                placeholder="Search Knowledge..."
+                value={knowledgeSearchTerm}
+                onchange={handleKnowledgeSearchChange}
+            ></lightning-input>
+        </div>
+
+        <template lwc:if={isLoading}>
+            <lightning-spinner alternative-text="Loading knowledge articles" size="small"></lightning-spinner>
+        </template>
+
+        <template lwc:if={errorMessage}>
+            <div class="slds-text-color_error slds-m-bottom_small">{errorMessage}</div>
+        </template>
+
+        <template lwc:if={hasAttachedArticles}>
+            <h3 class="section-title">Attached Articles</h3>
+            <ul class="article-list slds-m-bottom_medium">
+                <template for:each={attachedArticles} for:item="article">
+                    <li key={article.id} class="article-item">
+                        <div class="article-title-wrap">
+                            <button
+                                class="article-title"
+                                data-id={article.id}
+                                onclick={handleArticleTitleClick}
+                                onmouseenter={handlePreviewShow}
+                                onmouseleave={handlePreviewHide}
+                                type="button"
+                            >
+                                {article.title}
+                            </button>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </template>
+
+        <template lwc:if={hasSuggestedArticles}>
+            <h3 class="section-title">Suggested Articles</h3>
+            <p class="result-count">{suggestedResultLabel}</p>
+            <ul class="article-list">
+                <template for:each={suggestedArticles} for:item="article">
+                    <li key={article.id} class="article-item">
+                        <div class="article-title-wrap">
+                            <button
+                                class="article-title"
+                                data-id={article.id}
+                                onclick={handleArticleTitleClick}
+                                onmouseenter={handlePreviewShow}
+                                onmouseleave={handlePreviewHide}
+                                type="button"
+                            >
+                                {article.title}
+                            </button>
+                        </div>
+                        <div class="article-row-end">
+                            <lightning-button-menu
+                                alternative-text="Article actions"
+                                data-id={article.id}
+                                icon-size="x-small"
+                                menu-alignment="right"
+                                onselect={handleMenuSelect}
+                                variant="border-filled"
+                            >
+                                <lightning-menu-item
+                                    label="Preview"
+                                    value="preview"
+                                ></lightning-menu-item>
+                                <lightning-menu-item
+                                    label="Attach"
+                                    value="attach"
+                                ></lightning-menu-item>
+                                <lightning-menu-item
+                                    label="Open"
+                                    value="open"
+                                ></lightning-menu-item>
+                            </lightning-button-menu>
+                        </div>
+                    </li>
+                </template>
+            </ul>
+        </template>
+
+        <template lwc:if={showEmptyState}>
+            <p class="empty-state">{emptyStateMessage}</p>
+        </template>
+
+        <template lwc:if={showNewArticleModal}>
+            <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-labelledby="new-article-heading"
+                class={newArticleModalClass}
+            >
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <h2 id="new-article-heading" class="slds-modal__title slds-hyphenate">
+                            {newArticleModalTitle}
+                        </h2>
+                    </header>
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <template lwc:if={newArticleErrorMessage}>
+                            <div class="modal-error slds-m-bottom_small" role="alert">
+                                {newArticleErrorMessage}
+                            </div>
+                        </template>
+
+                        <template lwc:if={isNewArticleDetailsStep}>
+                            <div class="form-field">
+                                <label class="form-field-label">
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    Article Title
+                                </label>
+                                <lightning-input
+                                    data-field="article-title"
+                                    label="Article Title"
+                                    variant="label-hidden"
+                                    maxlength="80"
+                                    required
+                                    value={newArticleTitle}
+                                    onchange={handleNewArticleTitleChange}
+                                ></lightning-input>
+                                <p class="field-hint">{titleCharacterCount}</p>
+                            </div>
+
+                            <div class="form-field slds-m-top_small">
+                                <label class="form-field-label">
+                                    <abbr class="slds-required" title="required">*</abbr>
+                                    URL Name
+                                </label>
+                                <lightning-input
+                                    data-field="article-url-name"
+                                    label="URL Name"
+                                    variant="label-hidden"
+                                    maxlength="255"
+                                    required
+                                    value={newArticleUrlName}
+                                    onchange={handleNewArticleUrlNameChange}
+                                ></lightning-input>
+                            </div>
+
+                            <div class="form-field slds-m-top_small">
+                                <label class="form-field-label">Article Body</label>
+                                <lightning-input-rich-text
+                                    label="Article Body"
+                                    variant="label-hidden"
+                                    value={newArticleBody}
+                                    formats={richTextFormats}
+                                    onchange={handleNewArticleBodyChange}
+                                ></lightning-input-rich-text>
+                            </div>
+
+                            <lightning-combobox
+                                class="slds-m-top_small"
+                                label="Status"
+                                options={statusOptions}
+                                value={newArticleStatus}
+                                onchange={handleNewArticleStatusChange}
+                            ></lightning-combobox>
+
+                            <lightning-input
+                                class="slds-m-top_small"
+                                type="checkbox"
+                                label="Visible in App"
+                                checked={newArticleVisibleInApp}
+                                onchange={handleNewArticleVisibleChange}
+                            ></lightning-input>
+                        </template>
+
+                        <template lwc:if={isNewArticleFilesStep}>
+                            <p class="upload-intro">
+                                Article saved. Upload PDFs, images, or other documents (optional).
+                            </p>
+                            <lightning-file-upload
+                                label="Upload Files"
+                                name="articleFileUploader"
+                                record-id={createdArticleId}
+                                onuploadfinished={handleUploadFinished}
+                                multiple
+                            ></lightning-file-upload>
+                            <template lwc:if={uploadedFileCount}>
+                                <p class="field-hint slds-m-top_x-small">{uploadedFileLabel}</p>
+                            </template>
+                        </template>
+                    </div>
+                    <footer class="slds-modal__footer">
+                        <template lwc:if={isNewArticleDetailsStep}>
+                            <lightning-button
+                                label="Cancel"
+                                onclick={handleCloseNewArticleModal}
+                                disabled={isSavingArticle}
+                            ></lightning-button>
+                            <lightning-button
+                                label="Save"
+                                variant="brand"
+                                onclick={handleSaveNewArticle}
+                                disabled={isSavingArticle}
+                            ></lightning-button>
+                        </template>
+                        <template lwc:if={isNewArticleFilesStep}>
+                            <lightning-button
+                                label="Skip"
+                                onclick={handleSkipFiles}
+                            ></lightning-button>
+                            <lightning-button
+                                label="Open Article"
+                                variant="brand"
+                                onclick={handleOpenCreatedArticle}
+                            ></lightning-button>
+                        </template>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <template lwc:if={showPreviewPanel}>
+            <template lwc:if={isMobile}>
+                <div class="preview-backdrop" onclick={closePreview}></div>
+            </template>
+            <section
+                class={previewPanelClass}
+                style={previewPanelStyle}
+                onmouseenter={handlePreviewPanelEnter}
+                onmouseleave={handlePreviewHide}
+            >
+                <template lwc:if={isMobile}>
+                    <div class="preview-mobile-header">
+                        <h3 class="preview-mobile-title">Article Preview</h3>
+                        <lightning-button-icon
+                            alternative-text="Close preview"
+                            icon-name="utility:close"
+                            onclick={closePreview}
+                            variant="bare"
+                        ></lightning-button-icon>
+                    </div>
+                </template>
+                <template lwc:if={previewLoading}>
+                    <lightning-spinner alternative-text="Loading article preview" size="small"></lightning-spinner>
+                </template>
+
+                <template lwc:if={previewErrorMessage}>
+                    <p class="preview-error">{previewErrorMessage}</p>
+                </template>
+
+                <template lwc:if={previewData}>
+                    <div class="preview-header">
+                        <div class="preview-header-main">
+                            <span class="preview-icon-wrap">
+                                <lightning-icon
+                                    icon-name="standard:knowledge"
+                                    size="small"
+                                    alternative-text="Knowledge article"
+                                ></lightning-icon>
+                            </span>
+                            <button
+                                class="preview-header-title"
+                                onclick={handleOpenPreviewArticle}
+                                type="button"
+                            >
+                                {previewData.title}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="preview-meta-grid">
+                        <div class="preview-meta-item">
+                            <span class="preview-meta-label">Publication Status</span>
+                            <span class="preview-meta-value">{previewData.status}</span>
+                        </div>
+                        <div class="preview-meta-item">
+                            <span class="preview-meta-label">Article Number</span>
+                            <span class="preview-meta-value">{previewData.articleNumber}</span>
+                        </div>
+                        <div class="preview-meta-item">
+                            <span class="preview-meta-label">Last Modified Date</span>
+                            <span class="preview-meta-value">{previewData.lastModifiedDate}</span>
+                        </div>
+                    </div>
+
+                    <div class="preview-section">
+                        <h4 class="preview-section-title">Information</h4>
+                        <div class="preview-field">
+                            <span class="preview-field-label">Title</span>
+                            <span class="preview-field-value">{previewData.title}</span>
+                        </div>
+                        <div class="preview-field">
+                            <span class="preview-field-label">URL Name</span>
+                            <span class="preview-field-value">{previewData.urlName}</span>
+                        </div>
+                    </div>
+
+                    <div class="preview-section">
+                        <h4 class="preview-section-title">Article Details</h4>
+                        <div class="preview-field">
+                            <span class="preview-field-label">Overview</span>
+                            <div class="preview-overview">
+                                <lightning-formatted-rich-text
+                                    value={previewData.articleBody}
+                                ></lightning-formatted-rich-text>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </section>
+        </template>
+    </div>
+</template>

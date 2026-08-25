@@ -1,0 +1,208 @@
+<template>
+    <template if:true={showComponent}>
+        <article class={cardClass}>
+            <div class={headerClass}>
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="standard:service_appointment" size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <h2 class="slds-card__header-title">
+                            <span class="slds-truncate" title="Job Assignments">Job Assignments</span>
+                        </h2>
+                        <p class="slds-text-body_small slds-text-color_weak assignment-subtitle">
+                            {assignmentCount} engineers assigned to this job
+                        </p>
+                    </div>
+                </header>
+            </div>
+
+            <div class="slds-card__body slds-card__body_inner card-body">
+                <template if:true={isLoading}>
+                    <lightning-spinner alternative-text="Loading assignment" size="small"></lightning-spinner>
+                </template>
+
+                <template if:true={errorMessage}>
+                    <div class="error-banner slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert" aria-live="assertive">
+                        <span class="slds-assistive-text">Error</span>
+                        <lightning-icon
+                            icon-name="utility:error"
+                            alternative-text="Error"
+                            size="x-small"
+                            class="error-banner__icon">
+                        </lightning-icon>
+                        <div class="error-banner__content">
+                            <p class="error-banner__title">Unable to save changes</p>
+                            <p class="error-banner__message">{errorMessage}</p>
+                        </div>
+                        <lightning-button-icon
+                            icon-name="utility:close"
+                            alternative-text="Dismiss error"
+                            variant="bare-inverse"
+                            onclick={handleDismissError}
+                            class="error-banner__dismiss">
+                        </lightning-button-icon>
+                    </div>
+                </template>
+
+                <template if:true={locationMessage}>
+                    <div class="slds-notify slds-notify_alert slds-alert_warning slds-m-bottom_small location-alert" role="status">
+                        <span>{locationMessage}</span>
+                    </div>
+                </template>
+
+                <template if:false={isEditMode}>
+                    <div class="assignments-overview">
+                        <div class="assignments-list">
+                            <template for:each={allAssignments} for:item="row">
+                                <div key={row.id} class={row.rowClass}>
+                                    <div class="assignment-row__main">
+                                        <div class="assignment-row__engineer">
+                                            <span class="field-value">{row.engineerName}</span>
+                                            <template if:true={row.isOwnAssignment}>
+                                                <span class="own-badge">You</span>
+                                            </template>
+                                        </div>
+                                        <div class="assignment-row__meta">
+                                            <span class="field-value assignment-name">{row.name}</span>
+                                            <div class="assignment-row__schedule">
+                                                <span class="schedule-line">
+                                                    Scheduled start: {row.scheduledStartDisplay}
+                                                </span>
+                                                <span class="schedule-line">
+                                                    Scheduled end: {row.scheduledEndDisplay}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="assignment-row__status">
+                                        <div class="assignment-row__status-controls">
+                                            <template if:true={row.isEditable}>
+                                                <lightning-combobox
+                                                    name="status"
+                                                    label="Status"
+                                                    variant="label-hidden"
+                                                    value={row.status}
+                                                    options={statusOptions}
+                                                    data-assignment-id={row.id}
+                                                    data-current-status={row.status}
+                                                    onchange={handleRowStatusChange}
+                                                    disabled={isSaving}
+                                                    class="status-combobox"
+                                                    dropdown-alignment="auto">
+                                                </lightning-combobox>
+                                            </template>
+                                            <template if:false={row.isEditable}>
+                                                <span class={row.statusBadgeClass}>{row.status}</span>
+                                                <template if:false={row.isOwnAssignment}>
+                                                    <span class="read-only-label">View only</span>
+                                                </template>
+                                            </template>
+                                            <template if:true={row.isOwnAssignment}>
+                                                <lightning-button
+                                                    label="Edit"
+                                                    variant="neutral"
+                                                    onclick={handleEnterEditMode}
+                                                    disabled={isSaving}
+                                                    class="row-edit-button">
+                                                </lightning-button>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+
+                <template if:true={isEditMode}>
+                    <h3 class="section-title">Edit my assignment</h3>
+                    <div class="edit-form">
+                        <lightning-input
+                            type="datetime"
+                            name="plannedStart"
+                            label="Scheduled Start"
+                            value={editPlannedStart}
+                            onchange={handleEditPlannedStartChange}>
+                        </lightning-input>
+                        <lightning-input
+                            type="datetime"
+                            name="plannedEnd"
+                            label="Scheduled End"
+                            value={editPlannedEnd}
+                            onchange={handleEditPlannedEndChange}>
+                        </lightning-input>
+                        <lightning-input
+                            type="checkbox"
+                            label="All Day"
+                            checked={editAllDay}
+                            onchange={handleEditAllDayChange}>
+                        </lightning-input>
+                        <lightning-textarea
+                            name="rejectionReason"
+                            label="Notes / Reason"
+                            value={editRejectionReason}
+                            onchange={handleEditRejectionReasonChange}>
+                        </lightning-textarea>
+                    </div>
+
+                    <div class={actionRowClass}>
+                        <lightning-button
+                            label="Save"
+                            variant="brand"
+                            onclick={handleSaveEdit}
+                            disabled={isSaveEditDisabled}
+                            class="primary-action-button">
+                        </lightning-button>
+                        <lightning-button
+                            label="Cancel"
+                            variant="neutral"
+                            onclick={handleCancelEdit}
+                            disabled={isSaving}
+                            class="secondary-action-button">
+                        </lightning-button>
+                    </div>
+                </template>
+
+                <template if:true={isSaving}>
+                    <lightning-spinner alternative-text="Saving" size="small"></lightning-spinner>
+                </template>
+            </div>
+        </article>
+
+        <template if:true={showLocationPopup}>
+            <div class="location-popup-overlay" role="presentation">
+                <div class="location-popup-backdrop" onclick={handleCloseLocationPopup}></div>
+                <div
+                    role="dialog"
+                    tabindex="-1"
+                    aria-modal="true"
+                    aria-label="Location reminder"
+                    class="location-popup-panel">
+                    <button
+                        type="button"
+                        class="location-popup-close"
+                        title="Close"
+                        onclick={handleCloseLocationPopup}>
+                        <lightning-icon
+                            icon-name="utility:close"
+                            alternative-text="Close"
+                            size="x-small">
+                        </lightning-icon>
+                    </button>
+                    <div class="location-popup-content">
+                        <p class="location-popup-message">
+                            Please enable location services on your device and reload the page.
+                        </p>
+                        <lightning-button
+                            label="Back"
+                            variant="neutral"
+                            onclick={handleCloseLocationPopup}
+                            class="location-popup-back">
+                        </lightning-button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </template>
+</template>

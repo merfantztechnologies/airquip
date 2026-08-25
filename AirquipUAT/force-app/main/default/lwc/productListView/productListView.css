@@ -1,0 +1,57 @@
+.page-root {
+    min-height: 20rem;
+    background: var(--lwc-colorBackgroundAlt, #ffffff);
+    padding-top: 0;
+}
+
+.toolbar {
+    border-bottom: 1px solid var(--lwc-colorBorder, #dddbda);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #fff;
+}
+
+.controls-col {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.search-banner {
+    color: var(--lwc-brandAccessible, #0176d3);
+}
+
+.meta-row {
+    display: flex;
+    align-items: center;
+}
+
+.datatable-wrap {
+    --products-dt-scrollbar-pad: 20px;
+    position: relative;
+    min-height: 12rem;
+    height: calc(100vh - 16rem);
+    max-height: calc(100vh - 16rem);
+    overflow: hidden;
+    padding-left: var(--lwc-spacingMedium, 1rem) !important;
+    padding-right: var(--lwc-spacingMedium, 1rem) !important;
+}
+
+.datatable-wrap lightning-datatable {
+    display: block;
+    height: 100%;
+}
+
+.datatable-refresh-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.footer {
+    border-top: 1px solid var(--lwc-colorBorder, #dddbda);
+}

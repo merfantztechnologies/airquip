@@ -1,0 +1,21 @@
+:host {
+    font-family: Arial, sans-serif;
+}
+
+.select-column {
+    width: 3.25rem;
+}
+
+thead th {
+    background: #e5e5e5;
+    color: #143259;
+}
+
+tbody tr:nth-child(even) td {
+    background: #fafafa;
+}
+
+th .slds-truncate {
+    font-size: 0.9rem;
+    font-weight: 400;
+}

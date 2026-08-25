@@ -1,0 +1,23 @@
+/* Opportunity info row box */
+.slds-box.slds-box_x-small.slds-theme_shade {
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+}
+
+/* Warning banner text alignment */
+.slds-notify.slds-notify_alert {
+    border-radius: 0.25rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+/* Field label with icon alignment */
+.slds-form-element .slds-media.slds-media_center {
+    align-items: center;
+}
+
+/* Ensure icon vertical alignment */
+lightning-icon.slds-m-right_xx-small {
+    display: inline-flex;
+    align-items: center;
+}
